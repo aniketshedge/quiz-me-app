@@ -46,6 +46,10 @@ class LLMManager:
             ),
         }
 
+    def _should_failover(self, category: str) -> bool:
+        failover_categories = set(self.settings.llm_failover_on)
+        return "all" in failover_categories or category in failover_categories
+
     def any_provider_configured(self) -> bool:
         for provider_name in self.settings.llm_provider_order:
             provider = self.providers.get(provider_name)
@@ -91,7 +95,6 @@ class LLMManager:
         )
 
     def complete_text(self, task: str, system_prompt: str, user_prompt: str) -> LLMExecutionResult:
-        failover_categories = set(self.settings.llm_failover_on)
         errors: list[str] = []
 
         for provider_name in self.settings.llm_provider_order:
@@ -115,8 +118,15 @@ class LLMManager:
                     return LLMExecutionResult(provider=provider_name, raw_text=output)
                 except LLMError as exc:
                     errors.append(f"{provider_name}: {exc}")
-                    if exc.category not in failover_categories:
+                    if not self._should_failover(exc.category):
                         raise
+                except Exception as exc:
+                    errors.append(f"{provider_name}: unexpected error {exc}")
+                    if not self._should_failover("server_error"):
+                        raise LLMError(
+                            f"Unexpected provider error: {exc}",
+                            category="server_error",
+                        ) from exc
 
         raise LLMError(
             "All providers failed for text completion. " + " | ".join(errors),
@@ -130,7 +140,6 @@ class LLMManager:
         user_prompt: str,
         model_type: type[BaseModel],
     ) -> Tuple[BaseModel, str]:
-        failover_categories = set(self.settings.llm_failover_on)
         errors: list[str] = []
 
         for provider_name in self.settings.llm_provider_order:
@@ -163,12 +172,19 @@ class LLMManager:
                         return parsed, provider_name
                 except LLMError as exc:
                     errors.append(f"{provider_name}: {exc}")
-                    if exc.category not in failover_categories:
+                    if not self._should_failover(exc.category):
                         raise
                 except ValidationError as exc:
                     errors.append(f"{provider_name}: invalid_json {exc}")
-                    if "invalid_json" not in failover_categories:
+                    if not self._should_failover("invalid_json"):
                         raise LLMError(str(exc), category="invalid_json") from exc
+                except Exception as exc:
+                    errors.append(f"{provider_name}: unexpected error {exc}")
+                    if not self._should_failover("server_error"):
+                        raise LLMError(
+                            f"Unexpected provider error: {exc}",
+                            category="server_error",
+                        ) from exc
 
         raise LLMError(
             "All providers failed for JSON completion. " + " | ".join(errors),

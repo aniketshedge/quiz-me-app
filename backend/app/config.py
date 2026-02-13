@@ -77,12 +77,12 @@ class Settings:
     def from_env(cls) -> "Settings":
         provider_order = [
             os.getenv("LLM_PROVIDER_1", "openai").strip().lower(),
-            os.getenv("LLM_PROVIDER_2", "perplexity").strip().lower(),
-            os.getenv("LLM_PROVIDER_3", "gemini").strip().lower(),
+            os.getenv("LLM_PROVIDER_2", "gemini").strip().lower(),
+            os.getenv("LLM_PROVIDER_3", "perplexity").strip().lower(),
         ]
         provider_order = [p for p in provider_order if p in ALLOWED_PROVIDERS]
         if not provider_order:
-            provider_order = ["openai", "perplexity", "gemini"]
+            provider_order = ["openai", "gemini", "perplexity"]
 
         app_base_path = os.getenv("APP_BASE_PATH", "").strip()
         if app_base_path and not app_base_path.startswith("/"):
@@ -102,14 +102,12 @@ class Settings:
             ),
             llm_failover_on=_csv(
                 os.getenv("LLM_FAILOVER_ON"),
-                ["rate_limit", "timeout", "server_error", "invalid_json"],
+                ["all"],
             ),
             llm_allow_mock=_as_bool(os.getenv("LLM_ALLOW_MOCK"), True),
-            model_topic_guardrail=os.getenv("MODEL_TOPIC_GUARDRAIL", "cheap-default"),
-            model_quiz_generation=os.getenv(
-                "MODEL_QUIZ_GENERATION", "capable-default"
-            ),
-            model_short_grading=os.getenv("MODEL_SHORT_GRADING", "cheap-default"),
+            model_topic_guardrail=os.getenv("MODEL_TOPIC_GUARDRAIL", "gpt-5-nano"),
+            model_quiz_generation=os.getenv("MODEL_QUIZ_GENERATION", "gpt-5.2"),
+            model_short_grading=os.getenv("MODEL_SHORT_GRADING", "gpt-5-mini"),
             openai_api_key=os.getenv("OPENAI_API_KEY", ""),
             openai_base_url=os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"),
             perplexity_api_key=os.getenv("PERPLEXITY_API_KEY", ""),

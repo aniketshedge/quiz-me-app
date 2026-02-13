@@ -30,7 +30,6 @@ class OpenAICompatibleProvider:
                 {"role": "system", "content": request.system_prompt},
                 {"role": "user", "content": request.user_prompt},
             ],
-            "temperature": 0.2,
         }
 
         try:
@@ -88,9 +87,7 @@ class GeminiProvider:
             raise LLMError(f"Provider {self.name} is not configured", category="server_error")
 
         model = request.model
-        endpoint = (
-            f"{self.base_url.rstrip('/')}/models/{model}:generateContent?key={self.api_key}"
-        )
+        endpoint = f"{self.base_url.rstrip('/')}/models/{model}:generateContent"
 
         payload = {
             "systemInstruction": {"parts": [{"text": request.system_prompt}]},
@@ -101,7 +98,10 @@ class GeminiProvider:
         try:
             response = requests.post(
                 endpoint,
-                headers={"Content-Type": "application/json"},
+                headers={
+                    "x-goog-api-key": self.api_key,
+                    "Content-Type": "application/json",
+                },
                 data=json.dumps(payload),
                 timeout=self.timeout_ms / 1000,
             )
