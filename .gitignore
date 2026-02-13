@@ -5,3 +5,6 @@ __pycache__/
 *.pyc
 *.log
 notes/
+node_modules/
+frontend/dist/
+.pytest_cache/
