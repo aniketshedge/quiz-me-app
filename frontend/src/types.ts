@@ -102,3 +102,8 @@ export interface SessionStateResponse {
   answers: Record<string, AnswerState>;
   quiz: QuizModel;
 }
+
+export interface HealthResponse {
+  status: "ok" | "error";
+  mock_mode?: boolean;
+}

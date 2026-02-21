@@ -26,7 +26,8 @@ def _settings():
 
 @api_bp.get("/health")
 def health() -> tuple:
-    return jsonify({"status": "ok"}), 200
+    settings = _settings()
+    return jsonify({"status": "ok", "mock_mode": bool(settings.llm_force_mock_mode)}), 200
 
 
 @api_bp.post("/topic/resolve")

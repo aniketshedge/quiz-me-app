@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { isAxiosError } from "axios";
 import {
   createQuiz,
+  fetchHealth,
   fetchState,
   resolveTopic,
   resetSession,
@@ -29,6 +30,7 @@ interface QuizState {
   resolving: boolean;
   loadingQuiz: boolean;
   checkingAnswer: boolean;
+  mockMode: boolean;
   sessionId: string;
   provider: string;
   currentIndex: number;
@@ -76,6 +78,7 @@ export const useQuizStore = defineStore("quiz", {
     resolving: false,
     loadingQuiz: false,
     checkingAnswer: false,
+    mockMode: false,
     sessionId: "",
     provider: "",
     currentIndex: 0,
@@ -121,6 +124,15 @@ export const useQuizStore = defineStore("quiz", {
     },
     closePopup() {
       this.popup = defaultPopup();
+    },
+
+    async initialize() {
+      try {
+        const health = await fetchHealth();
+        this.mockMode = Boolean(health.mock_mode);
+      } catch (_error) {
+        this.mockMode = false;
+      }
     },
 
     async resolveTopic() {
@@ -289,6 +301,7 @@ export const useQuizStore = defineStore("quiz", {
       this.resolving = false;
       this.loadingQuiz = false;
       this.checkingAnswer = false;
+      // Keep mock-mode banner state from runtime health check.
       this.sessionId = "";
       this.provider = "";
       this.currentIndex = 0;

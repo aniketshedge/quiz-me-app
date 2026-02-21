@@ -2,6 +2,7 @@ import axios from "axios";
 import type {
   AnswerSubmissionResponse,
   CreateQuizResponse,
+  HealthResponse,
   ResolveTopicResponse,
   SessionStateResponse
 } from "../types";
@@ -49,4 +50,9 @@ export async function fetchState(sessionId: string): Promise<SessionStateRespons
 
 export async function resetSession(sessionId: string): Promise<void> {
   await client.post(`/quiz/${sessionId}/reset`);
+}
+
+export async function fetchHealth(): Promise<HealthResponse> {
+  const { data } = await client.get<HealthResponse>("/health");
+  return data;
 }

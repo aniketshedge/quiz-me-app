@@ -8,6 +8,7 @@
         v-if="store.step === 'topic'"
         :model-value="store.topicInput"
         :resolving="store.resolving"
+        :mock-mode="store.mockMode"
         @update:model-value="store.topicInput = $event"
         @submit="store.resolveTopic"
       />
@@ -55,6 +56,7 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from "vue";
 import { useQuizStore } from "./stores/quiz";
 import TopicStep from "./components/TopicStep.vue";
 import ArticleConfirmStep from "./components/ArticleConfirmStep.vue";
@@ -63,4 +65,8 @@ import ScoreStep from "./components/ScoreStep.vue";
 import PopupModal from "./components/PopupModal.vue";
 
 const store = useQuizStore();
+
+onMounted(() => {
+  void store.initialize();
+});
 </script>

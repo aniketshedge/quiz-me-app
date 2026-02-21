@@ -15,6 +15,10 @@
       @keyup.enter="$emit('submit')"
     />
 
+    <p v-if="mockMode" class="warning-note" role="status" aria-live="polite">
+      Mock mode is enabled. The app is using deterministic mock quiz data and will not call any LLM APIs.
+    </p>
+
     <div class="actions">
       <button type="button" class="btn btn-primary" :disabled="resolving" @click="$emit('submit')">
         {{ resolving ? "Resolving topic..." : "Find article" }}
@@ -27,6 +31,7 @@
 defineProps<{
   modelValue: string;
   resolving: boolean;
+  mockMode: boolean;
 }>();
 
 defineEmits<{

@@ -108,6 +108,17 @@ h1 {
   border-color: var(--accent);
 }
 
+.warning-note {
+  margin-top: 0.75rem;
+  margin-bottom: 0;
+  border: 1px solid #f5b38a;
+  background: #fff1e8;
+  color: #6f3f17;
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  font-size: 0.92rem;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -165,6 +176,12 @@ h1 {
   height: 110px;
   object-fit: cover;
   border-radius: 10px;
+  align-self: start;
+}
+
+.candidate-card-main-btn {
+  grid-column: 1 / -1;
+  justify-self: start;
 }
 
 .alt-list {
