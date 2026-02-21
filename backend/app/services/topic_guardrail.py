@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import re
 
+from app.config import Settings
 from app.providers.base import LLMError
 from app.providers.manager import LLMManager
 from app.schemas import TopicGuardrailResult
 
 
 class TopicGuardrailService:
-    def __init__(self, llm_manager: LLMManager) -> None:
+    def __init__(self, settings: Settings, llm_manager: LLMManager) -> None:
+        self.settings = settings
         self.llm_manager = llm_manager
 
     def _heuristic(self, topic: str) -> TopicGuardrailResult:
@@ -33,6 +35,12 @@ class TopicGuardrailService:
         )
 
     def classify_topic(self, topic: str) -> TopicGuardrailResult:
+        if self.settings.llm_force_mock_mode:
+            return TopicGuardrailResult(
+                decision="allow",
+                reason="Topic allowed automatically in forced mock mode.",
+            )
+
         if not self.llm_manager.any_provider_configured():
             return self._heuristic(topic)
 

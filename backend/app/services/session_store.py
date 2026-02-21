@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import threading
 import uuid
 from dataclasses import dataclass, field
@@ -20,6 +21,9 @@ from app.services.quiz_builder import QuizBuilderService
 
 
 MAX_ATTEMPTS_PER_QUESTION = 3
+GENERIC_INCORRECT_FEEDBACK = (
+    "That's not correct. Re-read the question and source context, then try again."
+)
 
 
 @dataclass
@@ -75,6 +79,49 @@ class SessionStore:
             if question.id == question_id:
                 return question
         return None
+
+    def _answer_revealed(
+        self,
+        feedback: str,
+        sensitive_tokens: list[str] | None = None,
+    ) -> bool:
+        text = feedback.strip().lower()
+        if not text:
+            return True
+
+        reveal_patterns = [
+            r"\bcorrect answer\b",
+            r"\bexpected answer\b",
+            r"\bthe answer is\b",
+            r"\boption\s+[a-z0-9]+\s+is correct\b",
+            r"\bshould be\b",
+            r"\bmust be\b",
+            r"\bresponse does not match\b",
+            r"\bmatches the expected\b",
+        ]
+        for pattern in reveal_patterns:
+            if re.search(pattern, text):
+                return True
+
+        for token in sensitive_tokens or []:
+            cleaned = token.strip().lower()
+            if len(cleaned) < 2:
+                continue
+            if cleaned in text:
+                return True
+        return False
+
+    def _safe_incorrect_feedback(
+        self,
+        raw_feedback: str,
+        sensitive_tokens: list[str] | None = None,
+    ) -> str:
+        candidate = (raw_feedback or "").strip()
+        if not candidate:
+            return GENERIC_INCORRECT_FEEDBACK
+        if self._answer_revealed(candidate, sensitive_tokens=sensitive_tokens):
+            return GENERIC_INCORRECT_FEEDBACK
+        return candidate
 
     def _build_state(self, record: SessionRecord) -> SessionStateResponse:
         score = 0
@@ -159,12 +206,21 @@ class SessionStore:
 
             chosen = selected[0]
             is_correct = chosen in question.correct_option_ids
+            correct_option_texts = [
+                option.text
+                for option in question.options
+                if option.id in set(question.correct_option_ids)
+            ]
+            sensitive_tokens = question.correct_option_ids + correct_option_texts
             feedback = (
                 "Correct answer."
                 if is_correct
-                else question.distractor_feedback.get(
-                    chosen,
-                    "That option is not correct for this question.",
+                else self._safe_incorrect_feedback(
+                    question.distractor_feedback.get(
+                        chosen,
+                        "That option is not correct for this question.",
+                    ),
+                    sensitive_tokens=sensitive_tokens,
                 )
             )
             answer.selected_option_ids = selected
@@ -183,6 +239,10 @@ class SessionStore:
 
             expected = sorted(set(question.correct_option_ids))
             is_correct = selected == expected
+            correct_option_texts = [
+                option.text for option in question.options if option.id in set(expected)
+            ]
+            sensitive_tokens = expected + correct_option_texts
             if is_correct:
                 feedback = "Correct answer set selected."
             else:
@@ -191,9 +251,15 @@ class SessionStore:
                 ]
                 wrong_items = [item for item in wrong_items if item]
                 feedback = (
-                    wrong_items[0]
+                    self._safe_incorrect_feedback(
+                        wrong_items[0],
+                        sensitive_tokens=sensitive_tokens,
+                    )
                     if wrong_items
-                    else "The selected set is not correct. Review and try again."
+                    else self._safe_incorrect_feedback(
+                        "The selected set is not correct. Review and try again.",
+                        sensitive_tokens=sensitive_tokens,
+                    )
                 )
             answer.selected_option_ids = selected
 
@@ -219,7 +285,14 @@ class SessionStore:
                 grade.is_correct
                 and grade.confidence >= self.settings.short_grade_confidence_threshold
             )
-            feedback = grade.reason
+            feedback = (
+                grade.reason
+                if is_correct
+                else self._safe_incorrect_feedback(
+                    grade.reason,
+                    sensitive_tokens=question.expected_answers,
+                )
+            )
             answer.short_answer = short_answer
 
         else:

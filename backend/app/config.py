@@ -50,6 +50,7 @@ class Settings:
     llm_max_retries_per_provider: int
     llm_failover_on: List[str]
     llm_allow_mock: bool
+    llm_force_mock_mode: bool
     llm_telemetry_enabled: bool
     llm_telemetry_dir: str
 
@@ -80,12 +81,12 @@ class Settings:
     def from_env(cls) -> "Settings":
         provider_order = [
             os.getenv("LLM_PROVIDER_1", "openai").strip().lower(),
-            os.getenv("LLM_PROVIDER_2", "gemini").strip().lower(),
-            os.getenv("LLM_PROVIDER_3", "perplexity").strip().lower(),
+            os.getenv("LLM_PROVIDER_2", "perplexity").strip().lower(),
+            os.getenv("LLM_PROVIDER_3", "gemini").strip().lower(),
         ]
         provider_order = [p for p in provider_order if p in ALLOWED_PROVIDERS]
         if not provider_order:
-            provider_order = ["openai", "gemini", "perplexity"]
+            provider_order = ["openai", "perplexity", "gemini"]
 
         app_base_path = os.getenv("APP_BASE_PATH", "").strip()
         if app_base_path and not app_base_path.startswith("/"):
@@ -101,17 +102,18 @@ class Settings:
             llm_provider_order=provider_order,
             llm_timeout_ms=_as_int(os.getenv("LLM_TIMEOUT_MS"), 90000),
             llm_max_retries_per_provider=_as_int(
-                os.getenv("LLM_MAX_RETRIES_PER_PROVIDER"), 1
+                os.getenv("LLM_MAX_RETRIES_PER_PROVIDER"), 0
             ),
             llm_failover_on=_csv(
                 os.getenv("LLM_FAILOVER_ON"),
                 ["all"],
             ),
             llm_allow_mock=_as_bool(os.getenv("LLM_ALLOW_MOCK"), True),
+            llm_force_mock_mode=_as_bool(os.getenv("LLM_FORCE_MOCK_MODE"), False),
             llm_telemetry_enabled=_as_bool(os.getenv("LLM_TELEMETRY_ENABLED"), True),
             llm_telemetry_dir=os.getenv("LLM_TELEMETRY_DIR", "runtime/llm_telemetry"),
             model_topic_guardrail=os.getenv("MODEL_TOPIC_GUARDRAIL", "gpt-5-nano"),
-            model_quiz_generation=os.getenv("MODEL_QUIZ_GENERATION", "gpt-5.2"),
+            model_quiz_generation=os.getenv("MODEL_QUIZ_GENERATION", "gpt-5-mini"),
             model_short_grading=os.getenv("MODEL_SHORT_GRADING", "gpt-5-mini"),
             openai_api_key=os.getenv("OPENAI_API_KEY", ""),
             openai_base_url=os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1"),

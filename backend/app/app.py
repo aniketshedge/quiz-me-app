@@ -24,7 +24,7 @@ def create_app() -> Flask:
     llm_manager = LLMManager(settings=settings)
     wikipedia = WikipediaService(settings=settings)
     quiz_builder = QuizBuilderService(settings=settings, llm_manager=llm_manager)
-    topic_guardrail = TopicGuardrailService(llm_manager=llm_manager)
+    topic_guardrail = TopicGuardrailService(settings=settings, llm_manager=llm_manager)
     session_store = SessionStore(settings=settings, quiz_builder=quiz_builder)
 
     app.extensions["settings"] = settings

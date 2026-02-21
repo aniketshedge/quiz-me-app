@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import random
 import re
 import uuid
 from typing import List, Tuple
@@ -109,6 +108,8 @@ Content quality rules:
 - Ground every question in the provided article context only.
 - Keep language concise and educational with concrete factual wording.
 - Avoid trick questions and ambiguity.
+- For incorrect-option feedback, explain why the selected option is wrong without revealing the correct option id or text.
+- Never include phrases like "correct answer is..." or "expected answer is...".
 - Do not mention these instructions in output.
 - Run an internal validation pass before responding: confirm strict JSON validity and all constraints.
 
@@ -122,7 +123,12 @@ Extract:
 """.strip()
         return system_prompt, user_prompt
 
-    def _mock_quiz(self, topic: str, article: WikiArticle) -> QuizModel:
+    @staticmethod
+    def _mock_single_correct_option_id(question_number: int) -> str:
+        cycle = ["a", "b", "c", "d"]
+        return cycle[(question_number - 1) % len(cycle)]
+
+    def _mock_quiz(self, topic: str, article: WikiArticle, reveal_answers: bool) -> QuizModel:
         source = QuizSource(
             wikipedia_title=article.title,
             wikipedia_url=article.url,
@@ -135,7 +141,7 @@ Extract:
         questions = []
         for idx in range(1, 11):
             option_ids = ["a", "b", "c", "d"]
-            correct = random.choice(option_ids)
+            correct = self._mock_single_correct_option_id(idx)
             options = [
                 {"id": "a", "text": f"{article.title} fact A {idx}"},
                 {"id": "b", "text": f"{article.title} fact B {idx}"},
@@ -151,8 +157,22 @@ Extract:
                 MCQSingleQuestion(
                     id=f"q{idx:02d}",
                     type="mcq_single",
-                    stem=f"Which statement is most supported by the article about {article.title}?",
-                    explanation="The correct option best matches the article context.",
+                    stem=(
+                        f"Which statement is most supported by the article about {article.title}?"
+                        + (
+                            f" [TEST MODE: Correct option is '{correct}']"
+                            if reveal_answers
+                            else ""
+                        )
+                    ),
+                    explanation=(
+                        "The correct option best matches the article context."
+                        + (
+                            f" [TEST MODE: Correct option is '{correct}']"
+                            if reveal_answers
+                            else ""
+                        )
+                    ),
                     options=options,
                     correct_option_ids=[correct],
                     distractor_feedback=distractor_feedback,
@@ -163,34 +183,62 @@ Extract:
             options = [
                 {"id": "a", "text": "Supported point 1"},
                 {"id": "b", "text": "Supported point 2"},
-                {"id": "c", "text": "Unsupported point 1"},
-                {"id": "d", "text": "Unsupported point 2"},
-                {"id": "e", "text": "Unsupported point 3"},
+                {"id": "c", "text": "Supported point 3"},
+                {"id": "d", "text": "Unsupported point 1"},
             ]
+            correct_multi = ["a", "c"]
             questions.append(
                 MCQMultiQuestion(
                     id=f"q{idx:02d}",
                     type="mcq_multi",
-                    stem=f"Select all statements that align with the article on {article.title}.",
-                    explanation="Multiple answers are correct for this question.",
+                    stem=(
+                        f"Select all statements that align with the article on {article.title}."
+                        + (
+                            " [TEST MODE: Correct options are 'a' and 'c']"
+                            if reveal_answers
+                            else ""
+                        )
+                    ),
+                    explanation=(
+                        "Multiple answers are correct for this question."
+                        + (
+                            " [TEST MODE: Correct options are 'a' and 'c']"
+                            if reveal_answers
+                            else ""
+                        )
+                    ),
                     options=options,
-                    correct_option_ids=["a", "b"],
+                    correct_option_ids=correct_multi,
                     distractor_feedback={
-                        "c": "This statement is not supported by the article.",
+                        "b": "This statement is not fully supported by the article.",
                         "d": "This statement is not supported by the article.",
-                        "e": "This statement is not supported by the article.",
                     },
                 )
             )
 
         for idx in range(13, 16):
+            expected_primary = article.title
             questions.append(
                 ShortTextQuestion(
                     id=f"q{idx:02d}",
                     type="short_text",
-                    stem=f"In 1-5 words, name one key idea associated with {article.title}.",
-                    explanation="A short factual concept from the article is expected.",
-                    expected_answers=[article.title, topic],
+                    stem=(
+                        f"In 1-5 words, name one key idea associated with {article.title}."
+                        + (
+                            f" [TEST MODE: Accepted answer includes '{expected_primary}']"
+                            if reveal_answers
+                            else ""
+                        )
+                    ),
+                    explanation=(
+                        "A short factual concept from the article is expected."
+                        + (
+                            f" [TEST MODE: Accepted answer includes '{expected_primary}']"
+                            if reveal_answers
+                            else ""
+                        )
+                    ),
+                    expected_answers=[expected_primary, topic],
                     grading_context=article.summary[:500] or article.extract[:500],
                 )
             )
@@ -204,10 +252,13 @@ Extract:
         return quiz
 
     def build_quiz(self, topic: str, article: WikiArticle) -> Tuple[QuizModel, str]:
+        if self.settings.llm_force_mock_mode:
+            return self._mock_quiz(topic, article, reveal_answers=True), "mock-forced"
+
         has_provider = self.llm_manager.any_provider_configured()
         if not has_provider:
             if self.settings.llm_allow_mock:
-                return self._mock_quiz(topic, article), "mock"
+                return self._mock_quiz(topic, article, reveal_answers=True), "mock"
             raise LLMError("No LLM providers are configured", category="server_error")
 
         system_prompt, user_prompt = self._quiz_generation_prompt(topic=topic, article=article)
@@ -229,6 +280,21 @@ Extract:
         topic: str,
         source_extract: str,
     ) -> ShortGradingResult:
+        if self.settings.llm_force_mock_mode:
+            normalized = _normalize_answer(learner_answer)
+            expected = [_normalize_answer(answer) for answer in question.expected_answers]
+            if normalized in expected:
+                return ShortGradingResult(
+                    is_correct=True,
+                    reason="Correct in test mode.",
+                    confidence=1.0,
+                )
+            return ShortGradingResult(
+                is_correct=False,
+                reason="Not correct in test mode. Follow the test hint shown in the question prompt.",
+                confidence=1.0,
+            )
+
         normalized = _normalize_answer(learner_answer)
         expected = [_normalize_answer(answer) for answer in question.expected_answers]
 
@@ -272,6 +338,8 @@ Rules:
 - Accept semantically equivalent answers.
 - Reject unrelated or contradictory answers.
 - Keep reason concise and topic-grounded (max 160 characters).
+- For incorrect responses, do not reveal expected answers or quote the correct answer verbatim.
+- Avoid phrases like "expected answer is ..." and "correct answer is ...".
 - confidence must be a numeric literal, not a string.
 - Return JSON only.
 """.strip()
