@@ -1,5 +1,5 @@
 <template>
-  <section class="panel">
+  <section class="panel article-confirm-panel">
     <h2>Confirm the article</h2>
     <p class="subtext">Select the article that best matches your intended quiz topic.</p>
 
@@ -19,7 +19,12 @@
         <a :href="primary.url" target="_blank" rel="noreferrer" @click.stop>Open source article</a>
       </div>
       <img v-if="primary.image_url" :src="primary.image_url" :alt="primary.title" />
-      <button type="button" class="btn candidate-card-main-btn" :disabled="loading" @click.stop="$emit('use-primary')">
+      <button
+        type="button"
+        class="btn btn-primary candidate-card-main-btn"
+        :disabled="loading"
+        @click.stop="$emit('use-primary')"
+      >
         {{ loading ? "Generating quiz..." : "Use this article" }}
       </button>
     </div>

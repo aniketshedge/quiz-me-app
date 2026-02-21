@@ -184,6 +184,30 @@ h1 {
   justify-self: start;
 }
 
+.article-confirm-panel button {
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.22s ease,
+    filter 0.2s ease;
+}
+
+.article-confirm-panel button:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(31, 41, 51, 0.11);
+  filter: brightness(1.01);
+}
+
+.article-confirm-panel button:not(:disabled):active {
+  transform: translateY(0);
+  box-shadow: 0 3px 8px rgba(31, 41, 51, 0.1);
+}
+
+.article-confirm-panel .alt-item.selected:not(:disabled):hover {
+  box-shadow:
+    0 0 0 3px var(--ring),
+    0 8px 18px rgba(31, 41, 51, 0.11);
+}
+
 .alt-list {
   margin-top: 1rem;
 }
