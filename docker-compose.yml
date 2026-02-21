@@ -5,6 +5,8 @@ services:
       dockerfile: backend/Dockerfile
     env_file:
       - .env
+    volumes:
+      - ./backend/runtime:/app/runtime
     ports:
       - "5000:5000"
 
@@ -14,6 +16,8 @@ services:
       dockerfile: frontend/Dockerfile
     env_file:
       - .env
+    environment:
+      - VITE_API_PROXY_TARGET=http://backend:5000
     depends_on:
       - backend
     ports:

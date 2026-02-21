@@ -8,3 +8,6 @@ notes/
 node_modules/
 frontend/dist/
 .pytest_cache/
+/package.json
+/package-lock.json
+backend/runtime/

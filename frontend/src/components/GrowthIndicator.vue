@@ -1,10 +1,9 @@
 <template>
   <div class="growth-indicator" aria-hidden="true">
     <div class="growth-svg-wrap">
-      <img ref="baseRef" class="growth-svg" :src="currentSrc" alt="" />
-      <img ref="overlayRef" class="growth-svg overlay" :src="overlaySrc" alt="" />
+      <img v-if="currentSrc" ref="baseRef" class="growth-svg" :src="currentSrc" alt="" />
+      <img v-if="overlaySrc" ref="overlayRef" class="growth-svg overlay" :src="overlaySrc" alt="" />
     </div>
-    <p class="growth-label">Tree of learning: {{ correctCount }} / {{ totalQuestions }}</p>
   </div>
 </template>
 
@@ -19,7 +18,8 @@ const props = defineProps<{
 
 const svgModules = import.meta.glob("../assets/plant/plant-state-*.svg", {
   eager: true,
-  import: "default"
+  import: "default",
+  query: "?url"
 }) as Record<string, string>;
 
 const stages = Object.entries(svgModules)
@@ -31,8 +31,9 @@ const stageIndex = computed(() => {
   return Math.min(Math.max(props.correctCount, 0), max);
 });
 
-const currentSrc = ref(stages[0]);
-const overlaySrc = ref(stages[0]);
+const initialStage = stages[0] ?? "";
+const currentSrc = ref(initialStage);
+const overlaySrc = ref(initialStage);
 const baseRef = ref<HTMLImageElement | null>(null);
 const overlayRef = ref<HTMLImageElement | null>(null);
 

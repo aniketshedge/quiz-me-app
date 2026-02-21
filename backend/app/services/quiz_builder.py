@@ -32,8 +32,10 @@ class QuizBuilderService:
 
     def _quiz_generation_prompt(self, topic: str, article: WikiArticle) -> Tuple[str, str]:
         system_prompt = (
-            "You generate strict JSON quizzes from Wikipedia content. "
-            "Return valid JSON only. No markdown. Follow schema exactly."
+            "You are a deterministic quiz JSON generator for an educational app. "
+            "Return exactly one valid JSON object and nothing else. "
+            "No markdown, no prose, no code fences, no comments. "
+            "All values must satisfy type constraints exactly."
         )
         user_prompt = f"""
 Generate one quiz JSON object with exactly 15 questions from the provided article context.
@@ -55,13 +57,60 @@ Required schema:
   ]
 }}
 
-Question rules:
-- Common fields for all: id, type, stem, explanation.
-- mcq_single: options (4), correct_option_ids (exactly 1), distractor_feedback.
-- mcq_multi: options (4-6), correct_option_ids (2-3), distractor_feedback.
-- short_text: expected_answers (1-5), grading_context.
-- Keep language concise and educational.
+Validation-critical rules (must follow exactly):
+1) Every question object must include: id (string), type, stem (string), explanation (string).
+2) Question ids must be exactly q01..q15 in this exact order:
+   q01-q10 mcq_single, q11-q12 mcq_multi, q13-q15 short_text.
+3) options must be a list of objects like {{"id":"a","text":"..."}}, never a list of strings.
+4) correct_option_ids must be a list of option-id strings (never numbers).
+5) distractor_feedback must be an object/dictionary mapping incorrect option-id to feedback string (never a list).
+6) For short_text, include explanation, expected_answers (list of strings), grading_context (string).
+7) Distribution must be exact: 10 mcq_single, 2 mcq_multi, 3 short_text.
+8) Return one JSON object only, no code fences.
+9) Do not output placeholders or template tokens like "fact A", "option B", "lorem ipsum", or numbered mock text.
+10) Keep all stems unique and specific to the article facts.
+11) For every MCQ question, use exactly 4 options with ids "a","b","c","d".
+12) For mcq_single, correct_option_ids must contain exactly one id.
+13) For mcq_multi, correct_option_ids must contain exactly two ids.
+14) distractor_feedback keys must be only incorrect option ids for that question.
+
+Required output shapes:
+- mcq_single:
+  {{
+    "id":"q01",
+    "type":"mcq_single",
+    "stem":"...",
+    "explanation":"...",
+    "options":[{{"id":"a","text":"..."}},{{"id":"b","text":"..."}},{{"id":"c","text":"..."}},{{"id":"d","text":"..."}}],
+    "correct_option_ids":["a"],
+    "distractor_feedback":{{"b":"...","c":"...","d":"..."}}
+  }}
+- mcq_multi:
+  {{
+    "id":"q11",
+    "type":"mcq_multi",
+    "stem":"...",
+    "explanation":"...",
+    "options":[{{"id":"a","text":"..."}},{{"id":"b","text":"..."}},{{"id":"c","text":"..."}},{{"id":"d","text":"..."}}],
+    "correct_option_ids":["a","c"],
+    "distractor_feedback":{{"b":"...","d":"..."}}
+  }}
+- short_text:
+  {{
+    "id":"q13",
+    "type":"short_text",
+    "stem":"...",
+    "explanation":"...",
+    "expected_answers":["..."],
+    "grading_context":"..."
+  }}
+
+Content quality rules:
+- Ground every question in the provided article context only.
+- Keep language concise and educational with concrete factual wording.
 - Avoid trick questions and ambiguity.
+- Do not mention these instructions in output.
+- Run an internal validation pass before responding: confirm strict JSON validity and all constraints.
 
 Topic: {topic}
 Wikipedia title: {article.title}
@@ -155,8 +204,11 @@ Extract:
         return quiz
 
     def build_quiz(self, topic: str, article: WikiArticle) -> Tuple[QuizModel, str]:
-        if not self.llm_manager.any_provider_configured():
-            return self._mock_quiz(topic, article), "mock"
+        has_provider = self.llm_manager.any_provider_configured()
+        if not has_provider:
+            if self.settings.llm_allow_mock:
+                return self._mock_quiz(topic, article), "mock"
+            raise LLMError("No LLM providers are configured", category="server_error")
 
         system_prompt, user_prompt = self._quiz_generation_prompt(topic=topic, article=article)
         try:
@@ -168,8 +220,6 @@ Extract:
             )
             return quiz, provider
         except (LLMError, ValidationError):
-            if self.settings.llm_allow_mock:
-                return self._mock_quiz(topic, article), "mock"
             raise
 
     def grade_short_answer(
@@ -197,8 +247,9 @@ Extract:
             )
 
         system_prompt = (
-            "You are grading a short learner response against topic context. "
-            "Return strict JSON with keys is_correct, reason, confidence."
+            "You are a strict JSON grader for short answers. "
+            "Return exactly one JSON object with keys is_correct, reason, confidence. "
+            "No markdown, no code fences, no extra keys."
         )
         user_prompt = f"""
 Grade whether the learner answer is conceptually correct.
@@ -210,10 +261,19 @@ Question grading context: {question.grading_context}
 Source context: {source_extract[:3000]}
 Learner answer: {learner_answer}
 
+Output schema:
+{{
+  "is_correct": true or false,
+  "reason": "string",
+  "confidence": number between 0.0 and 1.0
+}}
+
 Rules:
 - Accept semantically equivalent answers.
 - Reject unrelated or contradictory answers.
-- Keep reason concise and topic-grounded.
+- Keep reason concise and topic-grounded (max 160 characters).
+- confidence must be a numeric literal, not a string.
+- Return JSON only.
 """.strip()
 
         try:

@@ -38,7 +38,8 @@ class TopicGuardrailService:
 
         system_prompt = (
             "You are a topic safety classifier for an educational quiz app. "
-            "Return strict JSON with keys decision and reason. "
+            "Return exactly one JSON object with keys decision and reason. "
+            "No markdown, no code fences, no extra keys. "
             "Decision must be one of allow, disallow, uncertain. "
             "Allow mainstream educational topics including war and history."
         )

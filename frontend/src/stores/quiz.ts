@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import { isAxiosError } from "axios";
 import {
   createQuiz,
   fetchState,
@@ -44,6 +45,27 @@ function defaultPopup(): PopupState {
     title: "",
     message: ""
   };
+}
+
+function extractRequestErrorMessage(error: unknown, fallback: string): string {
+  if (!isAxiosError(error)) {
+    return fallback;
+  }
+
+  const responseData = error.response?.data as { message?: string; details?: string } | undefined;
+  if (typeof responseData?.message === "string" && responseData.message.trim()) {
+    return responseData.message.trim();
+  }
+  if (typeof responseData?.details === "string" && responseData.details.trim()) {
+    return responseData.details.trim();
+  }
+  if (error.response?.status) {
+    return `Request failed with status ${error.response.status}.`;
+  }
+  if (error.code === "ECONNABORTED") {
+    return "Request timed out while reaching the API.";
+  }
+  return error.message || fallback;
 }
 
 export const useQuizStore = defineStore("quiz", {
@@ -155,8 +177,11 @@ export const useQuizStore = defineStore("quiz", {
             data.message || "Pick a specific article from alternatives."
           );
         }
-      } catch (_error) {
-        this.showPopup("Lookup failed", "Could not resolve topic. Try again.");
+      } catch (error) {
+        this.showPopup(
+          "Lookup failed",
+          extractRequestErrorMessage(error, "Could not resolve topic. Try again.")
+        );
       } finally {
         this.resolving = false;
       }
@@ -164,6 +189,15 @@ export const useQuizStore = defineStore("quiz", {
 
     pickCandidate(candidate: TopicCandidate) {
       this.selectedCandidate = candidate;
+    },
+
+    async usePrimaryArticle() {
+      if (!this.primaryCandidate) {
+        this.showPopup("Select article", "No primary article is available.");
+        return;
+      }
+      this.selectedCandidate = this.primaryCandidate;
+      await this.createQuiz();
     },
 
     async createQuiz() {
@@ -179,10 +213,10 @@ export const useQuizStore = defineStore("quiz", {
         this.provider = response.provider || "unknown";
         await this.syncState();
         this.step = "quiz";
-      } catch (_error) {
+      } catch (error) {
         this.showPopup(
           "Quiz generation failed",
-          "Could not generate quiz after retries. Try another topic."
+          extractRequestErrorMessage(error, "Could not generate quiz after retries. Try another topic.")
         );
       } finally {
         this.loadingQuiz = false;

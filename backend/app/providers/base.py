@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Any, Protocol
 
 
 class LLMError(Exception):
@@ -16,6 +16,14 @@ class LLMCallInput:
     model: str
     system_prompt: str
     user_prompt: str
+    json_schema: dict[str, Any] | None = None
+
+
+@dataclass
+class LLMCallOutput:
+    text: str
+    cost_usd: float | None = None
+    usage: dict[str, Any] | None = None
 
 
 class LLMProvider(Protocol):
@@ -24,5 +32,5 @@ class LLMProvider(Protocol):
     def is_configured(self) -> bool:
         ...
 
-    def generate_text(self, request: LLMCallInput) -> str:
+    def generate_text(self, request: LLMCallInput) -> LLMCallOutput:
         ...

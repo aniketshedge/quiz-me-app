@@ -6,7 +6,79 @@ from typing import Any, Dict
 
 import requests
 
-from .base import LLMCallInput, LLMError
+from .base import LLMCallInput, LLMCallOutput, LLMError
+
+
+def _as_float_or_none(value: Any) -> float | None:
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        try:
+            return float(value.strip())
+        except ValueError:
+            return None
+    return None
+
+
+def _extract_cost_usd(data: dict[str, Any]) -> float | None:
+    usage = data.get("usage")
+    cost_candidates: list[Any] = []
+    if isinstance(usage, dict):
+        usage_cost = usage.get("cost")
+        if isinstance(usage_cost, dict):
+            cost_candidates.extend(
+                [
+                    usage_cost.get("total_cost"),
+                    usage_cost.get("total"),
+                    usage_cost.get("usd"),
+                ]
+            )
+        cost_candidates.extend([usage.get("total_cost"), usage.get("cost_usd")])
+
+    top_level_cost = data.get("cost")
+    if isinstance(top_level_cost, dict):
+        cost_candidates.extend(
+            [
+                top_level_cost.get("total_cost"),
+                top_level_cost.get("total"),
+                top_level_cost.get("usd"),
+            ]
+        )
+    cost_candidates.append(data.get("cost_usd"))
+
+    for candidate in cost_candidates:
+        parsed = _as_float_or_none(candidate)
+        if parsed is not None and parsed >= 0:
+            return parsed
+    return None
+
+
+def _to_gemini_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    def convert(node: Any) -> Any:
+        if isinstance(node, dict):
+            converted: dict[str, Any] = {}
+            for key, value in node.items():
+                if key == "type" and isinstance(value, str):
+                    converted[key] = value.upper()
+                elif key in {"properties", "definitions", "$defs"} and isinstance(value, dict):
+                    converted[key] = {inner_key: convert(inner_value) for inner_key, inner_value in value.items()}
+                elif key in {"items", "additionalProperties"}:
+                    converted[key] = convert(value)
+                elif key in {"anyOf", "oneOf", "allOf"} and isinstance(value, list):
+                    converted[key] = [convert(item) for item in value]
+                elif key == "$ref":
+                    # Gemini schema does not accept JSON Schema refs.
+                    continue
+                else:
+                    converted[key] = convert(value)
+            return converted
+        if isinstance(node, list):
+            return [convert(item) for item in node]
+        return node
+
+    return convert(schema)
 
 
 @dataclass
@@ -15,11 +87,12 @@ class OpenAICompatibleProvider:
     api_key: str
     base_url: str
     timeout_ms: int
+    supports_json_schema_response: bool = False
 
     def is_configured(self) -> bool:
         return bool(self.api_key)
 
-    def generate_text(self, request: LLMCallInput) -> str:
+    def generate_text(self, request: LLMCallInput) -> LLMCallOutput:
         if not self.is_configured():
             raise LLMError(f"Provider {self.name} is not configured", category="server_error")
 
@@ -31,6 +104,15 @@ class OpenAICompatibleProvider:
                 {"role": "user", "content": request.user_prompt},
             ],
         }
+        if request.json_schema and self.supports_json_schema_response:
+            payload["response_format"] = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": f"{request.task}_response",
+                    "strict": True,
+                    "schema": request.json_schema,
+                },
+            }
 
         try:
             response = requests.post(
@@ -69,7 +151,11 @@ class OpenAICompatibleProvider:
             raise LLMError(
                 f"Provider {self.name} returned empty content", category="server_error"
             )
-        return content.strip()
+        return LLMCallOutput(
+            text=content.strip(),
+            cost_usd=_extract_cost_usd(data),
+            usage=data.get("usage") if isinstance(data.get("usage"), dict) else None,
+        )
 
 
 @dataclass
@@ -82,7 +168,7 @@ class GeminiProvider:
     def is_configured(self) -> bool:
         return bool(self.api_key)
 
-    def generate_text(self, request: LLMCallInput) -> str:
+    def generate_text(self, request: LLMCallInput) -> LLMCallOutput:
         if not self.is_configured():
             raise LLMError(f"Provider {self.name} is not configured", category="server_error")
 
@@ -94,6 +180,9 @@ class GeminiProvider:
             "contents": [{"parts": [{"text": request.user_prompt}]}],
             "generationConfig": {"temperature": 0.2},
         }
+        if request.json_schema:
+            payload["generationConfig"]["responseMimeType"] = "application/json"
+            payload["generationConfig"]["responseSchema"] = _to_gemini_schema(request.json_schema)
 
         try:
             response = requests.post(
@@ -134,4 +223,6 @@ class GeminiProvider:
             raise LLMError(
                 f"Provider {self.name} returned empty content", category="server_error"
             )
-        return content
+        usage_metadata = data.get("usageMetadata")
+        usage = usage_metadata if isinstance(usage_metadata, dict) else None
+        return LLMCallOutput(text=content, cost_usd=_extract_cost_usd(data), usage=usage)

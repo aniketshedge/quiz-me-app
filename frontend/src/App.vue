@@ -19,6 +19,7 @@
         :selected="store.selectedCandidate"
         :loading="store.loadingQuiz"
         @select="store.pickCandidate"
+        @use-primary="store.usePrimaryArticle"
         @back="store.restart"
         @create="store.createQuiz"
       />
@@ -43,10 +44,6 @@
         @restart="store.restart"
       />
     </transition>
-
-    <p v-if="store.provider && store.step === 'quiz'" class="provider-note">
-      Generation provider: {{ store.provider }}
-    </p>
 
     <PopupModal
       :visible="store.popup.visible"

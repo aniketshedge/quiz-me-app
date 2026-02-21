@@ -50,6 +50,8 @@ class Settings:
     llm_max_retries_per_provider: int
     llm_failover_on: List[str]
     llm_allow_mock: bool
+    llm_telemetry_enabled: bool
+    llm_telemetry_dir: str
 
     model_topic_guardrail: str
     model_quiz_generation: str
@@ -67,6 +69,7 @@ class Settings:
     wiki_max_chars: int
     wiki_summary_target_chars: int
     wiki_lang: str
+    wiki_user_agent: str
 
     max_req_per_10min: str
     max_quiz_creations_per_10min: str
@@ -96,7 +99,7 @@ class Settings:
             cors_origins=_csv(os.getenv("CORS_ORIGINS"), ["*"]),
             max_content_length_mb=_as_int(os.getenv("MAX_CONTENT_LENGTH_MB"), 2),
             llm_provider_order=provider_order,
-            llm_timeout_ms=_as_int(os.getenv("LLM_TIMEOUT_MS"), 12000),
+            llm_timeout_ms=_as_int(os.getenv("LLM_TIMEOUT_MS"), 90000),
             llm_max_retries_per_provider=_as_int(
                 os.getenv("LLM_MAX_RETRIES_PER_PROVIDER"), 1
             ),
@@ -105,6 +108,8 @@ class Settings:
                 ["all"],
             ),
             llm_allow_mock=_as_bool(os.getenv("LLM_ALLOW_MOCK"), True),
+            llm_telemetry_enabled=_as_bool(os.getenv("LLM_TELEMETRY_ENABLED"), True),
+            llm_telemetry_dir=os.getenv("LLM_TELEMETRY_DIR", "runtime/llm_telemetry"),
             model_topic_guardrail=os.getenv("MODEL_TOPIC_GUARDRAIL", "gpt-5-nano"),
             model_quiz_generation=os.getenv("MODEL_QUIZ_GENERATION", "gpt-5.2"),
             model_short_grading=os.getenv("MODEL_SHORT_GRADING", "gpt-5-mini"),
@@ -123,6 +128,10 @@ class Settings:
                 os.getenv("WIKI_SUMMARY_TARGET_CHARS"), 8000
             ),
             wiki_lang=os.getenv("WIKI_LANG", "en"),
+            wiki_user_agent=os.getenv(
+                "WIKI_USER_AGENT",
+                "quiz-me-app/0.1 (https://apps.aniketshedge.com/quiz-me/; quiz-me-demo)",
+            ),
             max_req_per_10min=os.getenv("MAX_REQ_PER_10MIN", "60"),
             max_quiz_creations_per_10min=os.getenv("MAX_QUIZ_CREATIONS_PER_10MIN", "5"),
             short_grade_confidence_threshold=_as_float(

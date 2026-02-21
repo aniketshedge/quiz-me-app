@@ -18,7 +18,7 @@ function buildApiBase(): string {
 
 const client = axios.create({
   baseURL: buildApiBase(),
-  timeout: Number(import.meta.env.VITE_API_TIMEOUT_MS || 15000)
+  timeout: Number(import.meta.env.VITE_API_TIMEOUT_MS || 120000)
 });
 
 export async function resolveTopic(topic: string): Promise<ResolveTopicResponse> {

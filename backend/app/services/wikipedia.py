@@ -36,6 +36,10 @@ class WikipediaService:
         self.settings = settings
         self.lang = settings.wiki_lang
         self.api_base = f"https://{self.lang}.wikipedia.org"
+        self.headers = {
+            "User-Agent": settings.wiki_user_agent,
+            "Accept": "application/json",
+        }
 
     def _search(self, topic: str, limit: int = 5) -> list[dict]:
         endpoint = f"{self.api_base}/w/api.php"
@@ -46,14 +50,14 @@ class WikipediaService:
             "srlimit": limit,
             "format": "json",
         }
-        response = requests.get(endpoint, params=params, timeout=8)
+        response = requests.get(endpoint, params=params, headers=self.headers, timeout=8)
         response.raise_for_status()
         return response.json().get("query", {}).get("search", [])
 
     def _summary_for_title(self, title: str) -> dict:
         safe_title = quote(title.replace(" ", "_"), safe="")
         endpoint = f"{self.api_base}/api/rest_v1/page/summary/{safe_title}"
-        response = requests.get(endpoint, timeout=8)
+        response = requests.get(endpoint, headers=self.headers, timeout=8)
         if response.status_code >= 400:
             return {}
         return response.json()
@@ -68,7 +72,7 @@ class WikipediaService:
             "exsectionformat": "plain",
             "format": "json",
         }
-        response = requests.get(endpoint, params=params, timeout=8)
+        response = requests.get(endpoint, params=params, headers=self.headers, timeout=8)
         response.raise_for_status()
         pages = response.json().get("query", {}).get("pages", {})
         extract = pages.get(str(page_id), {}).get("extract", "")
@@ -112,7 +116,7 @@ class WikipediaService:
             "pageids": page_id,
             "format": "json",
         }
-        response = requests.get(endpoint, params=params, timeout=8)
+        response = requests.get(endpoint, params=params, headers=self.headers, timeout=8)
         response.raise_for_status()
         pages = response.json().get("query", {}).get("pages", {})
         page = pages.get(str(page_id), {})
