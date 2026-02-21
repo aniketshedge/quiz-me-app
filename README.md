@@ -5,7 +5,6 @@ A session-based demo quiz app with:
 - 3 attempts per question with lock-on-correct-or-exhausted
 - LLM provider fallback (`openai`, `perplexity`, `gemini`)
 - Vue SPA with animated in/out question transitions
-- SVG growth indicator (`state-0` to `state-15`) tied to correct answers
 
 ## Stack
 - Frontend: Vue 3 + TypeScript + Vite + Pinia + GSAP

@@ -154,7 +154,6 @@ class SessionStore:
         return SessionStateResponse(
             session_id=record.session_id,
             score=score,
-            correct_count=score,
             total_questions=len(record.quiz.questions),
             current_index=current_index,
             answers=answers_payload,

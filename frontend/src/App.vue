@@ -30,7 +30,6 @@
         :quiz="store.quiz"
         :answers="store.state?.answers || {}"
         :current-index="store.currentIndex"
-        :correct-count="store.correctCount"
         :total-questions="store.totalQuestions"
         :checking-answer="store.checkingAnswer"
         @prev="store.prevQuestion"

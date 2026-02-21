@@ -166,7 +166,6 @@ class AnswerState(BaseModel):
 class SessionStateResponse(BaseModel):
     session_id: str
     score: int
-    correct_count: int
     total_questions: int
     current_index: int
     answers: Dict[str, AnswerState]

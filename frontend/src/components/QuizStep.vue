@@ -5,7 +5,6 @@
         <p class="eyebrow">Question {{ currentIndex + 1 }} of {{ totalQuestions }}</p>
         <h2>{{ quiz.topic }}</h2>
       </div>
-      <GrowthIndicator :correct-count="correctCount" :total-questions="totalQuestions" />
     </header>
 
     <transition mode="out-in" @enter="onEnter" @leave="onLeave">
@@ -74,14 +73,12 @@
 import { computed, ref, watch } from "vue";
 import { gsap } from "gsap";
 import type { AnswerState, QuestionModel, QuizModel } from "../types";
-import GrowthIndicator from "./GrowthIndicator.vue";
 
 const props = defineProps<{
   quiz: QuizModel | null;
   answers: Record<string, AnswerState>;
   currentIndex: number;
   totalQuestions: number;
-  correctCount: number;
   checkingAnswer: boolean;
 }>();
 

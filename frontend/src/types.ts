@@ -96,7 +96,6 @@ export interface AnswerState {
 export interface SessionStateResponse {
   session_id: string;
   score: number;
-  correct_count: number;
   total_questions: number;
   current_index: number;
   answers: Record<string, AnswerState>;

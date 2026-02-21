@@ -101,9 +101,6 @@ export const useQuizStore = defineStore("quiz", {
     score(state): number {
       return state.state?.score || 0;
     },
-    correctCount(state): number {
-      return state.state?.correct_count || 0;
-    },
     totalQuestions(state): number {
       return state.state?.total_questions || 15;
     },

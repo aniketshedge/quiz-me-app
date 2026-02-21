@@ -211,10 +211,7 @@ h1 {
 }
 
 .quiz-header {
-  display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 1rem;
-  align-items: center;
+  display: block;
 }
 
 .eyebrow {
@@ -283,38 +280,6 @@ h1 {
 .provider-note {
   margin-top: 0.8rem;
   text-align: right;
-  color: var(--muted);
-  font-size: 0.88rem;
-}
-
-.growth-indicator {
-  border: 1px solid var(--border);
-  background: #fff;
-  border-radius: 14px;
-  padding: 0.45rem;
-}
-
-.growth-svg-wrap {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-}
-
-.growth-svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.growth-svg.overlay {
-  opacity: 0;
-}
-
-.growth-label {
-  margin: 0.5rem 0 0;
-  text-align: center;
   color: var(--muted);
   font-size: 0.88rem;
 }
@@ -398,15 +363,4 @@ h1 {
 .step-fade-enter-from,
 .step-fade-leave-to {
   opacity: 0;
-}
-
-@media (max-width: 900px) {
-  .quiz-header {
-    grid-template-columns: 1fr;
-  }
-
-  .growth-indicator {
-    max-width: 240px;
-    margin-left: auto;
-  }
 }
