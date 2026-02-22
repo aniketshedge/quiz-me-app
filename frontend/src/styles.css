@@ -489,6 +489,27 @@ h1 {
   text-align: center;
 }
 
+.score-panel button {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    filter 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.score-panel button:not(:disabled):hover {
+  box-shadow: 0 6px 14px rgba(31, 41, 51, 0.08);
+}
+
+.score-panel button:not(:disabled):active {
+  box-shadow: 0 3px 8px rgba(31, 41, 51, 0.08);
+}
+
+.score-panel .btn.btn-primary:not(:disabled):hover {
+  filter: brightness(1.06) saturate(1.02);
+}
+
 .score-value {
   font-size: clamp(2.1rem, 7vw, 3.5rem);
   color: var(--accent);
