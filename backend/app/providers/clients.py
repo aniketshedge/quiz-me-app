@@ -73,6 +73,14 @@ def _looks_like_gemini_schema_error(response_text: str) -> bool:
     return has_schema_path or (("invalid json payload" in lowered) and has_schema_keyword)
 
 
+def _looks_like_openai_response_schema_error(response_text: str) -> bool:
+    lowered = response_text.lower()
+    return (
+        "invalid schema for response_format" in lowered
+        or ("response_format" in lowered and "schema" in lowered and "required" in lowered)
+    )
+
+
 def _to_openai_strict_schema(schema: dict[str, Any]) -> dict[str, Any]:
     root = deepcopy(schema)
 
@@ -234,22 +242,37 @@ class OpenAICompatibleProvider:
         if request.max_output_tokens and self.name == "perplexity":
             payload["max_tokens"] = request.max_output_tokens
 
-        try:
-            response = requests.post(
-                endpoint,
-                headers={
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json",
-                },
-                json=payload,
-                timeout=self.timeout_ms / 1000,
-            )
-        except requests.Timeout as exc:
-            raise LLMError(f"Provider {self.name} timed out", category="timeout") from exc
-        except requests.RequestException as exc:
-            raise LLMError(
-                f"Provider {self.name} network error: {exc}", category="server_error"
-            ) from exc
+        def post_payload(active_payload: dict[str, Any]) -> requests.Response:
+            try:
+                return requests.post(
+                    endpoint,
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json=active_payload,
+                    timeout=self.timeout_ms / 1000,
+                )
+            except requests.Timeout as exc:
+                raise LLMError(f"Provider {self.name} timed out", category="timeout") from exc
+            except requests.RequestException as exc:
+                raise LLMError(
+                    f"Provider {self.name} network error: {exc}", category="server_error"
+                ) from exc
+
+        response = post_payload(payload)
+        if (
+            self.name == "openai"
+            and request.json_schema
+            and self.supports_json_schema_response
+            and response.status_code == 400
+            and _looks_like_openai_response_schema_error(response.text)
+        ):
+            # OpenAI can reject strict response schema for complex payloads.
+            # Retry once without response_format and rely on prompt+validation+repair.
+            payload_without_schema = dict(payload)
+            payload_without_schema.pop("response_format", None)
+            response = post_payload(payload_without_schema)
 
         if response.status_code == 429:
             raise LLMError(f"Provider {self.name} rate limited", category="rate_limit")
