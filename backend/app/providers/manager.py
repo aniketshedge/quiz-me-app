@@ -79,6 +79,28 @@ class LLMManager:
             return stripped[first : last + 1]
         raise LLMError("Could not extract JSON object from model output", category="invalid_json")
 
+    @staticmethod
+    def _prompt_with_truncation_guard(user_prompt: str) -> str:
+        return (
+            user_prompt
+            + "\n\nCRITICAL: Return one COMPLETE JSON object with all required fields and all 15 questions. "
+            + "Do not truncate. Ensure all arrays/objects are fully closed."
+        )
+
+    @staticmethod
+    def _extra_invalid_json_retry_limit(provider_name: str, task: str) -> int:
+        if provider_name == "perplexity" and task == "quiz_generation":
+            return 1
+        return 0
+
+    @staticmethod
+    def _max_output_tokens(provider_name: str, task: str) -> int | None:
+        if provider_name != "perplexity":
+            return None
+        if task.startswith("quiz_generation"):
+            return 8000
+        return None
+
     def _repair_json(
         self,
         provider_name: str,
@@ -121,6 +143,7 @@ class LLMManager:
                     model=model,
                     system_prompt=repair_system,
                     user_prompt=repair_user,
+                    max_output_tokens=self._max_output_tokens(provider_name, f"{task}_repair"),
                 )
             )
             self.telemetry.measure_and_record(
@@ -254,35 +277,41 @@ class LLMManager:
             model = self.settings.get_task_model(provider_name, task)
             json_schema = model_type.model_json_schema()
             attempts = max(0, self.settings.llm_max_retries_per_provider)
-            for attempt_index in range(attempts + 1):
+            extra_invalid_json_retries = self._extra_invalid_json_retry_limit(provider_name, task)
+            total_attempts = attempts + 1 + extra_invalid_json_retries
+            for attempt_index in range(total_attempts):
                 attempt_number = attempt_index + 1
                 started_at = perf_counter()
+                prompt_for_attempt = user_prompt
+                if attempt_index >= (attempts + 1):
+                    prompt_for_attempt = self._prompt_with_truncation_guard(user_prompt)
                 try:
                     raw = provider.generate_text(
                         LLMCallInput(
                             task=task,
                             model=model,
                             system_prompt=system_prompt,
-                            user_prompt=user_prompt,
+                            user_prompt=prompt_for_attempt,
                             json_schema=json_schema,
+                            max_output_tokens=self._max_output_tokens(provider_name, task),
                         )
-                    )
-                    self.telemetry.measure_and_record(
-                        operation="complete_json_model",
-                        task=task,
-                        provider=provider_name,
-                        model=model,
-                        attempt=attempt_number,
-                        started_at=started_at,
-                        outcome="success",
-                        category="success",
-                        cost_usd=raw.cost_usd,
                     )
                     raw_text = raw.text
 
                     try:
                         extracted = self._extract_json_text(raw_text)
                         parsed = model_type.model_validate_json(extracted)
+                        self.telemetry.measure_and_record(
+                            operation="complete_json_model",
+                            task=task,
+                            provider=provider_name,
+                            model=model,
+                            attempt=attempt_number,
+                            started_at=started_at,
+                            outcome="success",
+                            category="success",
+                            cost_usd=raw.cost_usd,
+                        )
                         return parsed, provider_name
                     except ValidationError as validation_exc:
                         repaired = self._repair_json(
@@ -295,6 +324,17 @@ class LLMManager:
                         )
                         extracted = self._extract_json_text(repaired)
                         parsed = model_type.model_validate_json(extracted)
+                        self.telemetry.measure_and_record(
+                            operation="complete_json_model",
+                            task=task,
+                            provider=provider_name,
+                            model=model,
+                            attempt=attempt_number,
+                            started_at=started_at,
+                            outcome="success",
+                            category="success",
+                            cost_usd=raw.cost_usd,
+                        )
                         return parsed, provider_name
                     except (json.JSONDecodeError, LLMError) as parse_exc:
                         repaired = self._repair_json(
@@ -307,6 +347,17 @@ class LLMManager:
                         )
                         extracted = self._extract_json_text(repaired)
                         parsed = model_type.model_validate_json(extracted)
+                        self.telemetry.measure_and_record(
+                            operation="complete_json_model",
+                            task=task,
+                            provider=provider_name,
+                            model=model,
+                            attempt=attempt_number,
+                            started_at=started_at,
+                            outcome="success",
+                            category="success",
+                            cost_usd=raw.cost_usd,
+                        )
                         return parsed, provider_name
                 except LLMError as exc:
                     self.telemetry.measure_and_record(
@@ -320,6 +371,11 @@ class LLMManager:
                         category=exc.category,
                         error_message=str(exc),
                     )
+                    is_retryable_invalid_json = (
+                        exc.category == "invalid_json" and attempt_index < (total_attempts - 1)
+                    )
+                    if is_retryable_invalid_json:
+                        continue
                     errors.append(f"{provider_name}: {exc}")
                     if not self._should_failover(exc.category):
                         raise
@@ -335,6 +391,8 @@ class LLMManager:
                         category="invalid_json",
                         error_message=str(exc),
                     )
+                    if attempt_index < (total_attempts - 1):
+                        continue
                     errors.append(f"{provider_name}: invalid_json {exc}")
                     if not self._should_failover("invalid_json"):
                         raise LLMError(str(exc), category="invalid_json") from exc

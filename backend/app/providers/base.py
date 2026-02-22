@@ -17,6 +17,7 @@ class LLMCallInput:
     system_prompt: str
     user_prompt: str
     json_schema: dict[str, Any] | None = None
+    max_output_tokens: int | None = None
 
 
 @dataclass

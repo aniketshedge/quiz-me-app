@@ -73,6 +73,36 @@ def _looks_like_gemini_schema_error(response_text: str) -> bool:
     return has_schema_path or (("invalid json payload" in lowered) and has_schema_keyword)
 
 
+def _to_openai_strict_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    root = deepcopy(schema)
+
+    def normalize(node: Any) -> Any:
+        if isinstance(node, dict):
+            normalized = {key: normalize(value) for key, value in node.items()}
+
+            if normalized.get("type") == "object":
+                properties = normalized.get("properties")
+                if isinstance(properties, dict):
+                    normalized.setdefault("additionalProperties", False)
+                    required = normalized.get("required")
+                    if isinstance(required, list):
+                        missing = [key for key in properties.keys() if key not in required]
+                        if missing:
+                            normalized["required"] = [*required, *missing]
+                    else:
+                        normalized["required"] = list(properties.keys())
+            return normalized
+
+        if isinstance(node, list):
+            return [normalize(item) for item in node]
+        return node
+
+    normalized_root = normalize(root)
+    if isinstance(normalized_root, dict):
+        return normalized_root
+    return {"type": "object", "additionalProperties": False}
+
+
 def _to_gemini_schema(schema: dict[str, Any]) -> dict[str, Any]:
     root = deepcopy(schema)
     definitions: dict[str, Any] = {}
@@ -192,14 +222,17 @@ class OpenAICompatibleProvider:
             ],
         }
         if request.json_schema and self.supports_json_schema_response:
+            strict_schema = _to_openai_strict_schema(request.json_schema)
             payload["response_format"] = {
                 "type": "json_schema",
                 "json_schema": {
                     "name": f"{request.task}_response",
                     "strict": True,
-                    "schema": request.json_schema,
+                    "schema": strict_schema,
                 },
             }
+        if request.max_output_tokens and self.name == "perplexity":
+            payload["max_tokens"] = request.max_output_tokens
 
         try:
             response = requests.post(
