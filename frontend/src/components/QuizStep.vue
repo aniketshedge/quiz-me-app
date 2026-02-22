@@ -31,7 +31,6 @@
               <span class="option-marker" aria-hidden="true">{{ optionLetter(optionIndex) }}</span>
               <span class="option-card">
                 <span class="option-text">{{ option.text }}</span>
-                <span v-if="isSelected(option.id)" class="option-selected-indicator" aria-hidden="true">✓</span>
               </span>
             </label>
           </div>
