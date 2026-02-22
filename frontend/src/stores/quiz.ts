@@ -16,6 +16,7 @@ import type {
 } from "../types";
 
 type AppStep = "topic" | "confirm" | "quiz" | "score";
+const SESSION_STORAGE_KEY = "quiz-me-session-v1";
 
 interface PopupState {
   visible: boolean;
@@ -70,6 +71,14 @@ function extractRequestErrorMessage(error: unknown, fallback: string): string {
   return error.message || fallback;
 }
 
+interface PersistedSessionState {
+  sessionId: string;
+  currentIndex: number;
+  step: "quiz" | "score";
+  selectedTopic: string;
+  provider: string;
+}
+
 export const useQuizStore = defineStore("quiz", {
   state: (): QuizState => ({
     step: "topic",
@@ -112,6 +121,83 @@ export const useQuizStore = defineStore("quiz", {
     }
   },
   actions: {
+    persistSessionState() {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      if (!this.sessionId || !this.state) {
+        window.localStorage.removeItem(SESSION_STORAGE_KEY);
+        return;
+      }
+
+      const payload: PersistedSessionState = {
+        sessionId: this.sessionId,
+        currentIndex: this.currentIndex,
+        step: this.step === "score" ? "score" : "quiz",
+        selectedTopic: this.selectedTopic,
+        provider: this.provider
+      };
+      window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(payload));
+    },
+
+    clearPersistedSessionState() {
+      if (typeof window === "undefined") {
+        return;
+      }
+      window.localStorage.removeItem(SESSION_STORAGE_KEY);
+    },
+
+    async restoreSessionFromStorage() {
+      if (typeof window === "undefined") {
+        return;
+      }
+
+      const raw = window.localStorage.getItem(SESSION_STORAGE_KEY);
+      if (!raw) {
+        return;
+      }
+
+      let saved: PersistedSessionState | null = null;
+      try {
+        saved = JSON.parse(raw) as PersistedSessionState;
+      } catch (_error) {
+        this.clearPersistedSessionState();
+        return;
+      }
+
+      if (!saved?.sessionId) {
+        this.clearPersistedSessionState();
+        return;
+      }
+
+      this.sessionId = saved.sessionId;
+      this.selectedTopic = saved.selectedTopic || "";
+      this.provider = saved.provider || "";
+
+      try {
+        const state = await fetchState(saved.sessionId);
+        this.state = state;
+        const total = state.total_questions || 15;
+        this.currentIndex = Math.min(
+          Math.max(0, saved.currentIndex || 0),
+          Math.max(0, total - 1)
+        );
+        if (this.allLocked || saved.step === "score") {
+          this.step = "score";
+        } else {
+          this.step = "quiz";
+        }
+        this.persistSessionState();
+      } catch (_error) {
+        this.sessionId = "";
+        this.provider = "";
+        this.currentIndex = 0;
+        this.state = null;
+        this.clearPersistedSessionState();
+      }
+    },
+
     showPopup(title: string, message: string) {
       this.popup = {
         visible: true,
@@ -130,6 +216,7 @@ export const useQuizStore = defineStore("quiz", {
       } catch (_error) {
         this.mockMode = false;
       }
+      await this.restoreSessionFromStorage();
     },
 
     async resolveTopic() {
@@ -222,6 +309,7 @@ export const useQuizStore = defineStore("quiz", {
         this.provider = response.provider || "unknown";
         await this.syncState();
         this.step = "quiz";
+        this.persistSessionState();
       } catch (error) {
         this.showPopup(
           "Quiz generation failed",
@@ -247,6 +335,7 @@ export const useQuizStore = defineStore("quiz", {
       if (this.allLocked) {
         this.step = "score";
       }
+      this.persistSessionState();
     },
 
     async submitCurrentAnswer(payload: {
@@ -294,9 +383,11 @@ export const useQuizStore = defineStore("quiz", {
       const advance = () => {
         if (this.currentIndex >= total - 1) {
           this.step = "score";
+          this.persistSessionState();
           return;
         }
         this.currentIndex = Math.min(total - 1, this.currentIndex + 1);
+        this.persistSessionState();
       };
 
       const answer = this.state?.answers?.[question.id];
@@ -337,15 +428,18 @@ export const useQuizStore = defineStore("quiz", {
 
     prevQuestion() {
       this.currentIndex = Math.max(0, this.currentIndex - 1);
+      this.persistSessionState();
     },
 
     nextQuestion() {
       const total = this.state?.total_questions || 15;
       if (this.currentIndex >= total - 1) {
         this.step = "score";
+        this.persistSessionState();
         return;
       }
       this.currentIndex = Math.min(total - 1, this.currentIndex + 1);
+      this.persistSessionState();
     },
 
     async restart() {
@@ -372,6 +466,7 @@ export const useQuizStore = defineStore("quiz", {
       this.alternatives = [];
       this.selectedCandidate = null;
       this.popup = defaultPopup();
+      this.clearPersistedSessionState();
     }
   }
 });

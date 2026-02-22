@@ -66,8 +66,12 @@ def resolve_topic() -> tuple:
         )
         return jsonify(response.model_dump()), 200
 
-    primary = candidates[0]
-    alternatives = candidates[1:5]
+    # Prefer a non-disambiguation page as the recommended primary candidate.
+    ranked = [item for item in candidates if not item.is_disambiguation] + [
+        item for item in candidates if item.is_disambiguation
+    ]
+    primary = ranked[0]
+    alternatives = ranked[1:6]
     status = "ambiguous" if primary.is_disambiguation else "ok"
 
     response = TopicResolveResponse(
