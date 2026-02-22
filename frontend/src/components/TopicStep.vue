@@ -1,7 +1,7 @@
 <template>
   <section class="panel">
-    <h1>Quiz Me</h1>
-    <p class="subtext">Enter a topic and we will build a grounded 15-question quiz for you.</p>
+    <h1>Quiz Me!</h1>
+    <p class="subtext">Create a quiz for yourself based on any topic!</p>
 
     <label for="topic-input" class="field-label">Topic</label>
     <input
@@ -24,6 +24,16 @@
         {{ resolving ? "Resolving topic..." : "Find article" }}
       </button>
     </div>
+
+    <section class="topic-how-it-works" aria-label="How this app works">
+      <h3>This is how this app works</h3>
+      <ol>
+        <li>You choose a topic.</li>
+        <li>We find matching Wikipedia articles and you pick the closest one.</li>
+        <li>We create a quiz based on the selected Wikipedia article.</li>
+        <li>Solve the quiz to test your knowledge of your chosen topic.</li>
+      </ol>
+    </section>
   </section>
 </template>
 

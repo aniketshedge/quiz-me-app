@@ -77,7 +77,12 @@
           <li>Do not submit personal, sensitive, or confidential information.</li>
           <li>You are responsible for verifying content correctness before any external use.</li>
           <li>Service behavior, availability, and features may change at any time without notice.</li>
-          <li>Misuse, abuse, or unlawful use is prohibited.</li>
+          <li>
+            Output quality depends on AI model responses, and this service may use different models at different
+            times.
+          </li>
+          <li>This service may not work when upstream AI services are unavailable.</li>
+          <li>This service may be rate limited.</li>
         </ul>
         <div class="actions legal-actions">
           <button type="button" class="btn btn-primary" @click="legalVisible = false">Close</button>
