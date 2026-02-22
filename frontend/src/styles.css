@@ -35,10 +35,15 @@
   --shadow-soft: rgba(31, 41, 51, 0.07);
   --shadow-mid: rgba(31, 41, 51, 0.08);
   --shadow-border: rgba(31, 41, 51, 0.12);
-  --aurora-a: rgba(86, 166, 125, 0.42);
-  --aurora-b: rgba(239, 131, 84, 0.3);
-  --aurora-c: rgba(110, 158, 193, 0.24);
-  --aurora-vignette: rgba(0, 0, 0, 0.06);
+  --paper-shape-1: rgba(151, 199, 176, 0.48);
+  --paper-shape-2: rgba(229, 180, 146, 0.42);
+  --paper-shape-3: rgba(166, 183, 212, 0.4);
+  --paper-shape-4: rgba(201, 170, 206, 0.34);
+  --paper-shape-5: rgba(238, 213, 157, 0.3);
+  --paper-shape-6: rgba(170, 204, 198, 0.28);
+  --paper-edge: rgba(255, 255, 255, 0.42);
+  --paper-gloss: rgba(255, 255, 255, 0.22);
+  --paper-vignette: rgba(0, 0, 0, 0.08);
 }
 
 :root[data-theme="night"] {
@@ -78,10 +83,15 @@
   --shadow-soft: rgba(0, 0, 0, 0.34);
   --shadow-mid: rgba(0, 0, 0, 0.42);
   --shadow-border: rgba(255, 255, 255, 0.12);
-  --aurora-a: rgba(73, 180, 126, 0.35);
-  --aurora-b: rgba(106, 154, 224, 0.24);
-  --aurora-c: rgba(234, 136, 93, 0.18);
-  --aurora-vignette: rgba(0, 0, 0, 0.38);
+  --paper-shape-1: rgba(93, 133, 116, 0.42);
+  --paper-shape-2: rgba(163, 118, 91, 0.34);
+  --paper-shape-3: rgba(89, 113, 148, 0.36);
+  --paper-shape-4: rgba(129, 97, 142, 0.3);
+  --paper-shape-5: rgba(156, 135, 93, 0.28);
+  --paper-shape-6: rgba(77, 126, 119, 0.28);
+  --paper-edge: rgba(255, 255, 255, 0.16);
+  --paper-gloss: rgba(255, 255, 255, 0.1);
+  --paper-vignette: rgba(0, 0, 0, 0.45);
 }
 
 * {
@@ -203,41 +213,34 @@ a {
   z-index: 0;
 }
 
-.aurora-layer {
+.paper-shape {
   position: absolute;
-  border-radius: 999px;
-  filter: blur(66px);
-  will-change: transform, opacity;
+  background:
+    linear-gradient(150deg, var(--paper-gloss), transparent 45%),
+    var(--shape-color);
+  border: 1px solid var(--paper-edge);
+  box-shadow:
+    0 22px 50px var(--shadow-soft),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  will-change: transform;
 }
 
-.aurora-layer-a {
-  width: min(56vw, 680px);
-  height: min(56vw, 680px);
-  right: -8%;
-  top: -12%;
-  background: var(--aurora-a);
+.paper-circle {
+  border-radius: 50%;
 }
 
-.aurora-layer-b {
-  width: min(48vw, 560px);
-  height: min(48vw, 560px);
-  left: -10%;
-  bottom: 2%;
-  background: var(--aurora-b);
+.paper-rounded {
+  border-radius: 38% 62% 58% 42% / 39% 44% 56% 61%;
 }
 
-.aurora-layer-c {
-  width: min(44vw, 520px);
-  height: min(44vw, 520px);
-  left: 28%;
-  top: 26%;
-  background: var(--aurora-c);
+.paper-pebble {
+  border-radius: 55% 45% 52% 48% / 41% 58% 42% 59%;
 }
 
-.aurora-vignette {
+.paper-vignette {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 35%, transparent 0%, var(--aurora-vignette) 100%);
+  background: radial-gradient(circle at 52% 34%, transparent 0%, var(--paper-vignette) 100%);
 }
 
 .panel-toolbar {

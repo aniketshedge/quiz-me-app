@@ -1,30 +1,40 @@
 <template>
   <div class="app-background" aria-hidden="true">
     <motion.div
-      class="aurora-layer aurora-layer-a"
-      :initial="staticA"
-      :animate="reducedMotion ? staticA : animateA"
-      :transition="transitionA"
+      v-for="shape in shapes"
+      :key="shape.id"
+      class="paper-shape"
+      :class="shape.variant"
+      :style="shapeStyle(shape)"
+      :initial="shapeInitial(shape)"
+      :animate="reducedMotion ? shapeStatic(shape) : shapeAnimate(shape)"
+      :transition="shapeTransition(shape)"
     />
-    <motion.div
-      class="aurora-layer aurora-layer-b"
-      :initial="staticB"
-      :animate="reducedMotion ? staticB : animateB"
-      :transition="transitionB"
-    />
-    <motion.div
-      class="aurora-layer aurora-layer-c"
-      :initial="staticC"
-      :animate="reducedMotion ? staticC : animateC"
-      :transition="transitionC"
-    />
-    <div class="aurora-vignette"></div>
+    <div class="paper-vignette"></div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { motion, useReducedMotion } from "motion-v";
+
+type ShapeVariant = "paper-circle" | "paper-rounded" | "paper-pebble";
+
+interface FloatingShape {
+  id: string;
+  variant: ShapeVariant;
+  colorIndex: 1 | 2 | 3 | 4 | 5 | 6;
+  width: number;
+  height: number;
+  left: string;
+  top: string;
+  opacity: number;
+  yRange: number[];
+  rotateRange: number[];
+  xRange: number[];
+  duration: number;
+  delay: number;
+}
 
 const prefersReducedMotion = useReducedMotion();
 const motionMode = ref<"auto" | "on" | "off">("auto");
@@ -38,59 +48,145 @@ const reducedMotion = computed(() => {
   return Boolean(prefersReducedMotion.value);
 });
 
-const staticA = {
-  x: 0,
-  y: 0,
-  scale: 1,
-  opacity: 0.56
-};
-const staticB = {
-  x: 0,
-  y: 0,
-  scale: 1,
-  opacity: 0.5
-};
-const staticC = {
-  x: 0,
-  y: 0,
-  scale: 1,
-  opacity: 0.44
-};
+const shapes: FloatingShape[] = [
+  {
+    id: "paper-1",
+    variant: "paper-rounded",
+    colorIndex: 1,
+    width: 270,
+    height: 190,
+    left: "4%",
+    top: "10%",
+    opacity: 0.5,
+    yRange: [-14, 10, -12],
+    rotateRange: [-6, 4, -5],
+    xRange: [-8, 6, -6],
+    duration: 18,
+    delay: 0
+  },
+  {
+    id: "paper-2",
+    variant: "paper-circle",
+    colorIndex: 2,
+    width: 190,
+    height: 190,
+    left: "80%",
+    top: "8%",
+    opacity: 0.44,
+    yRange: [-10, 12, -10],
+    rotateRange: [-5, 3, -4],
+    xRange: [6, -8, 6],
+    duration: 17,
+    delay: 0.4
+  },
+  {
+    id: "paper-3",
+    variant: "paper-pebble",
+    colorIndex: 3,
+    width: 250,
+    height: 170,
+    left: "68%",
+    top: "68%",
+    opacity: 0.42,
+    yRange: [-12, 9, -11],
+    rotateRange: [5, -4, 4],
+    xRange: [5, -7, 5],
+    duration: 20,
+    delay: 0.6
+  },
+  {
+    id: "paper-4",
+    variant: "paper-rounded",
+    colorIndex: 4,
+    width: 220,
+    height: 160,
+    left: "15%",
+    top: "72%",
+    opacity: 0.38,
+    yRange: [-11, 8, -10],
+    rotateRange: [4, -3, 4],
+    xRange: [-6, 5, -6],
+    duration: 19,
+    delay: 0.3
+  },
+  {
+    id: "paper-5",
+    variant: "paper-circle",
+    colorIndex: 5,
+    width: 130,
+    height: 130,
+    left: "45%",
+    top: "16%",
+    opacity: 0.32,
+    yRange: [-7, 7, -7],
+    rotateRange: [-3, 2, -3],
+    xRange: [4, -4, 4],
+    duration: 16,
+    delay: 0.8
+  },
+  {
+    id: "paper-6",
+    variant: "paper-pebble",
+    colorIndex: 6,
+    width: 170,
+    height: 120,
+    left: "36%",
+    top: "78%",
+    opacity: 0.31,
+    yRange: [-8, 6, -8],
+    rotateRange: [3, -2, 3],
+    xRange: [-4, 4, -4],
+    duration: 15,
+    delay: 0.1
+  }
+];
 
-const animateA = {
-  x: [-92, 66, -44, -92],
-  y: [-52, 30, 48, -52],
-  scale: [1, 1.12, 0.92, 1],
-  opacity: [0.44, 0.78, 0.54, 0.44]
-};
-const animateB = {
-  x: [74, -48, 58, 74],
-  y: [44, -32, 40, 44],
-  scale: [1, 0.9, 1.08, 1],
-  opacity: [0.36, 0.66, 0.42, 0.36]
-};
-const animateC = {
-  x: [-38, 52, -26, -38],
-  y: [56, -38, 30, 56],
-  scale: [1, 1.09, 0.91, 1],
-  opacity: [0.34, 0.62, 0.4, 0.34]
-};
+function shapeStyle(shape: FloatingShape): Record<string, string | number> {
+  return {
+    "--shape-color": `var(--paper-shape-${shape.colorIndex})`,
+    width: `${shape.width}px`,
+    height: `${shape.height}px`,
+    left: shape.left,
+    top: shape.top,
+    opacity: shape.opacity
+  };
+}
 
-const transitionA = {
-  duration: 16,
-  repeat: Infinity,
-  ease: "easeInOut"
-};
-const transitionB = {
-  duration: 20,
-  repeat: Infinity,
-  ease: "easeInOut"
-};
-const transitionC = {
-  duration: 18,
-  repeat: Infinity,
-  ease: "easeInOut"
-};
+function shapeInitial(shape: FloatingShape): Record<string, number> {
+  return {
+    x: shape.xRange[0],
+    y: shape.yRange[0],
+    rotate: shape.rotateRange[0],
+    scale: 1
+  };
+}
+
+function shapeStatic(shape: FloatingShape): Record<string, number> {
+  return {
+    x: shape.xRange[0],
+    y: shape.yRange[0],
+    rotate: shape.rotateRange[0],
+    scale: 1
+  };
+}
+
+function shapeAnimate(shape: FloatingShape): Record<string, number[]> {
+  return {
+    x: shape.xRange,
+    y: shape.yRange,
+    rotate: shape.rotateRange,
+    scale: [1, 1.015, 1]
+  };
+}
+
+function shapeTransition(shape: FloatingShape): Record<string, string | number> {
+  return {
+    duration: shape.duration,
+    repeat: Infinity,
+    ease: "easeInOut",
+    delay: shape.delay
+  };
+}
 
 onMounted(() => {
   const motionParam = new URLSearchParams(window.location.search).get("motion")?.toLowerCase();
