@@ -753,6 +753,15 @@ h1 {
   line-height: 1.45;
 }
 
+.legal-source {
+  margin: 0.95rem 0 0;
+  line-height: 1.45;
+}
+
+.legal-source a {
+  color: var(--accent);
+}
+
 .legal-actions {
   margin-top: 1.1rem;
   justify-content: flex-end;

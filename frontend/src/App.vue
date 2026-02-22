@@ -106,6 +106,12 @@
           <li>This service may not work when upstream AI services are unavailable.</li>
           <li>This service may be rate limited.</li>
         </ul>
+        <p class="legal-source">
+          Source code available at:
+          <a href="https://github.com/aniketshedge/quiz-me-app" target="_blank" rel="noreferrer">
+            https://github.com/aniketshedge/quiz-me-app
+          </a>
+        </p>
         <div class="actions legal-actions">
           <button type="button" class="btn btn-primary" @click="legalVisible = false">Close</button>
         </div>
