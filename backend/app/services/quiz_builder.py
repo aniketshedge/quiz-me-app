@@ -29,7 +29,16 @@ class QuizBuilderService:
         self.settings = settings
         self.llm_manager = llm_manager
 
+    def _bounded_extract_for_quiz(self, article: WikiArticle) -> str:
+        # Keep quiz generation context compact and deterministic for reliability/cost.
+        cap = max(1000, min(self.settings.wiki_max_chars, self.settings.wiki_summary_target_chars))
+        extract = (article.extract or article.summary or "").strip()
+        if len(extract) <= cap:
+            return extract
+        return extract[:cap].rstrip()
+
     def _quiz_generation_prompt(self, topic: str, article: WikiArticle) -> Tuple[str, str]:
+        bounded_extract = self._bounded_extract_for_quiz(article)
         system_prompt = (
             "You are a deterministic quiz JSON generator for an educational app. "
             "Return exactly one valid JSON object and nothing else. "
@@ -119,7 +128,7 @@ Wikipedia URL: {article.url}
 Wikipedia page_id: {article.page_id}
 Summary: {article.summary}
 Extract:
-{article.extract}
+{bounded_extract}
 """.strip()
         return system_prompt, user_prompt
 
@@ -269,6 +278,13 @@ Extract:
                 user_prompt=user_prompt,
                 model_type=QuizModel,
             )
+            # Source metadata should be grounded in the selected article, not model-generated values.
+            quiz.source.wikipedia_title = article.title
+            quiz.source.wikipedia_url = article.url
+            quiz.source.page_id = article.page_id
+            quiz.source.image_url = article.image_url
+            quiz.source.image_caption = article.image_caption
+            quiz.source.extract_used = self._bounded_extract_for_quiz(article)
             return quiz, provider
         except (LLMError, ValidationError):
             raise
