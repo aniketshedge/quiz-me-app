@@ -5,6 +5,10 @@ import svgLoader from "vite-svg-loader";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const basePath = env.VITE_APP_BASE_PATH || "/";
+  const allowedHosts = (env.VITE_ALLOWED_HOSTS || "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
   const trimmedBase = basePath.replace(/\/+$/, "").replace(/^\/?/, "/");
   const apiPrefix = trimmedBase === "/" ? "/api" : `${trimmedBase}/api`;
   const proxyTarget = env.VITE_API_PROXY_TARGET || "http://127.0.0.1:5000";
@@ -27,6 +31,7 @@ export default defineConfig(({ mode }) => {
     server: {
       host: true,
       port: 5173,
+      allowedHosts: allowedHosts.length > 0 ? allowedHosts : undefined,
       proxy: proxyConfig
     }
   };
