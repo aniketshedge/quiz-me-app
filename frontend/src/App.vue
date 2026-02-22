@@ -45,6 +45,7 @@
           @prev="store.prevQuestion"
           @next="store.nextFromQuiz"
           @check="store.submitCurrentAnswer"
+          @reset-session="store.restart"
         >
           <template #top-right>
             <ThemeToggle :is-night="isNight" @toggle="toggleTheme" />

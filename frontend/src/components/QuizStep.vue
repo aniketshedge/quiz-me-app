@@ -101,7 +101,21 @@
         <button type="button" class="btn" :disabled="checkingAnswer" @click="goNext">
           {{ isLastQuestion ? "Finish" : "Next" }}
         </button>
+        <button type="button" class="btn btn-reset-session" :disabled="checkingAnswer" @click="showResetConfirm = true">
+          Reset session
+        </button>
       </footer>
+
+      <div v-if="showResetConfirm" class="popup-overlay" @click.self="showResetConfirm = false">
+        <div class="popup-card" role="dialog" aria-modal="true" aria-label="Reset session confirmation">
+          <h3>Reset this session?</h3>
+          <p>Your current quiz progress will be cleared and you will return to the landing page.</p>
+          <div class="actions confirm-actions">
+            <button type="button" class="btn" @click="showResetConfirm = false">Cancel</button>
+            <button type="button" class="btn btn-primary" @click="confirmReset">Reset session</button>
+          </div>
+        </div>
+      </div>
   </section>
 </template>
 
@@ -122,10 +136,12 @@ const emit = defineEmits<{
   (event: "prev"): void;
   (event: "next", payload: { selected_option_ids?: string[]; short_answer?: string }): void;
   (event: "check", payload: { selected_option_ids?: string[]; short_answer?: string }): void;
+  (event: "reset-session"): void;
 }>();
 
 const selectedOptionIds = ref<string[]>([]);
 const shortAnswer = ref("");
+const showResetConfirm = ref(false);
 const direction = ref(1);
 const prefersReducedMotion = useReducedMotion();
 const reducedMotion = computed(() => Boolean(prefersReducedMotion.value));
@@ -233,6 +249,11 @@ function goNext(): void {
     return;
   }
   emit("next", { selected_option_ids: [...selectedOptionIds.value] });
+}
+
+function confirmReset(): void {
+  showResetConfirm.value = false;
+  emit("reset-session");
 }
 
 const cardInitial = computed(() =>
