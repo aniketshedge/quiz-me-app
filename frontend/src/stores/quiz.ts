@@ -302,6 +302,9 @@ export const useQuizStore = defineStore("quiz", {
     },
 
     async usePrimaryArticle() {
+      if (this.loadingQuiz) {
+        return;
+      }
       if (!this.primaryCandidate) {
         this.showPopup("Select article", "No primary article is available.");
         return;
@@ -311,6 +314,9 @@ export const useQuizStore = defineStore("quiz", {
     },
 
     async createQuiz() {
+      if (this.loadingQuiz) {
+        return;
+      }
       if (!this.selectedCandidate) {
         this.showPopup("Select article", "Choose an article to generate quiz.");
         return;
