@@ -1,5 +1,8 @@
 <template>
   <section class="panel">
+    <div class="panel-toolbar">
+      <slot name="top-right" />
+    </div>
     <h1>Quiz Me!</h1>
     <p class="subtext">Create a quiz for yourself based on any topic!</p>
 

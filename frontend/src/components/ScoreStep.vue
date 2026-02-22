@@ -1,5 +1,8 @@
 <template>
   <motion.section class="panel score-panel" :initial="panelInitial" :animate="panelAnimate" :transition="panelTransition">
+    <div class="panel-toolbar">
+      <slot name="top-right" />
+    </div>
     <h2>Quiz complete!</h2>
     <motion.p class="score-value" :initial="scoreInitial" :animate="scoreAnimate" :transition="scoreTransition">
       {{ displayedScore }} / {{ total }}

@@ -1,7 +1,9 @@
 <template>
-  <div class="quiz-stage" v-if="quiz && question">
-    <h2 class="quiz-stage-title">{{ quizTitle }}</h2>
-    <section class="quiz-shell">
+  <section class="quiz-shell quiz-stage" v-if="quiz && question">
+      <div class="panel-toolbar panel-toolbar-quiz">
+        <h2 class="quiz-stage-title">{{ quizTitle }}</h2>
+        <slot name="top-right" />
+      </div>
       <header class="quiz-header">
         <p class="eyebrow">Question {{ currentIndex + 1 }} of {{ totalQuestions }}</p>
         <AnimatePresence mode="wait">
@@ -100,8 +102,7 @@
           Next
         </button>
       </footer>
-    </section>
-  </div>
+  </section>
 </template>
 
 <script setup lang="ts">

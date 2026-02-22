@@ -1,9 +1,6 @@
 <template>
   <main class="app-shell">
     <AppBackground />
-    <div class="theme-toggle-wrap">
-      <ThemeToggle :is-night="isNight" @toggle="toggleTheme" />
-    </div>
 
     <div class="app-content">
       <transition mode="out-in" name="step-fade">
@@ -14,7 +11,11 @@
           :mock-mode="store.mockMode"
           @update:model-value="store.topicInput = $event"
           @submit="store.resolveTopic"
-        />
+        >
+          <template #top-right>
+            <ThemeToggle :is-night="isNight" @toggle="toggleTheme" />
+          </template>
+        </TopicStep>
 
         <ArticleConfirmStep
           v-else-if="store.step === 'confirm'"
@@ -26,7 +27,11 @@
           @use-primary="store.usePrimaryArticle"
           @back="store.restart"
           @create="store.createQuiz"
-        />
+        >
+          <template #top-right>
+            <ThemeToggle :is-night="isNight" @toggle="toggleTheme" />
+          </template>
+        </ArticleConfirmStep>
 
         <QuizStep
           v-else-if="store.step === 'quiz'"
@@ -38,14 +43,22 @@
           @prev="store.prevQuestion"
           @next="store.nextQuestion"
           @check="store.submitCurrentAnswer"
-        />
+        >
+          <template #top-right>
+            <ThemeToggle :is-night="isNight" @toggle="toggleTheme" />
+          </template>
+        </QuizStep>
 
         <ScoreStep
           v-else
           :score="store.score"
           :total="store.totalQuestions"
           @restart="store.restart"
-        />
+        >
+          <template #top-right>
+            <ThemeToggle :is-night="isNight" @toggle="toggleTheme" />
+          </template>
+        </ScoreStep>
       </transition>
     </div>
 

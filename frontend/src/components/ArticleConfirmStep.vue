@@ -1,5 +1,8 @@
 <template>
   <section class="panel article-confirm-panel">
+    <div class="panel-toolbar">
+      <slot name="top-right" />
+    </div>
     <h2>Confirm the article</h2>
     <p class="subtext">Select the article that best matches your intended quiz topic.</p>
 
