@@ -98,8 +98,8 @@
         <button type="button" class="btn btn-primary" :disabled="!canCheck" @click="checkAnswer">
           {{ checkingAnswer ? "Checking..." : "Check" }}
         </button>
-        <button type="button" class="btn" :disabled="currentIndex >= totalQuestions - 1" @click="$emit('next')">
-          Next
+        <button type="button" class="btn" :disabled="checkingAnswer" @click="$emit('next')">
+          {{ isLastQuestion ? "Finish" : "Next" }}
         </button>
       </footer>
   </section>
@@ -184,6 +184,8 @@ const canCheck = computed(() => {
   }
   return selectedOptionIds.value.length > 0;
 });
+
+const isLastQuestion = computed(() => props.currentIndex >= props.totalQuestions - 1);
 
 function isSelected(optionId: string): boolean {
   return selectedOptionIds.value.includes(optionId);

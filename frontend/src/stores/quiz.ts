@@ -232,13 +232,18 @@ export const useQuizStore = defineStore("quiz", {
       }
     },
 
-    async syncState() {
+    async syncState(options?: { preserveIndex?: boolean }) {
       if (!this.sessionId) {
         return;
       }
       const state = await fetchState(this.sessionId);
       this.state = state;
-      this.currentIndex = state.current_index;
+      const total = state.total_questions || 15;
+      if (options?.preserveIndex) {
+        this.currentIndex = Math.min(this.currentIndex, Math.max(0, total - 1));
+      } else {
+        this.currentIndex = Math.min(state.current_index, Math.max(0, total - 1));
+      }
       if (this.allLocked) {
         this.step = "score";
       }
@@ -256,7 +261,7 @@ export const useQuizStore = defineStore("quiz", {
           question_id: question.id,
           ...payload
         });
-        await this.syncState();
+        await this.syncState({ preserveIndex: true });
 
         if (result.status === "invalid") {
           this.showPopup("Invalid response", result.feedback);
@@ -280,6 +285,10 @@ export const useQuizStore = defineStore("quiz", {
 
     nextQuestion() {
       const total = this.state?.total_questions || 15;
+      if (this.currentIndex >= total - 1) {
+        this.step = "score";
+        return;
+      }
       this.currentIndex = Math.min(total - 1, this.currentIndex + 1);
     },
 
