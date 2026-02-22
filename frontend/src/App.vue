@@ -10,6 +10,7 @@
           :resolving="store.resolving"
           :mock-mode="store.mockMode"
           :rate-limit-notice="store.rateLimitNotice"
+          :daily-quiz-limit="store.dailyQuizLimit"
           @update:model-value="store.topicInput = $event"
           @submit="store.resolveTopic"
         >

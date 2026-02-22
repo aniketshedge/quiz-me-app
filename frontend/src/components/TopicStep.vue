@@ -32,6 +32,9 @@
         <li>We create a quiz based on the selected Wikipedia article.</li>
         <li>Solve the quiz to test your knowledge of your chosen topic.</li>
       </ol>
+      <p class="topic-limit-note">
+        You can create {{ dailyQuizLimit }} {{ dailyQuizLimit === 1 ? "quiz" : "quizzes" }} per day.
+      </p>
     </section>
 
     <p v-if="mockMode" class="warning-note" role="status" aria-live="polite">
@@ -49,6 +52,7 @@ defineProps<{
   resolving: boolean;
   mockMode: boolean;
   rateLimitNotice: string;
+  dailyQuizLimit: number;
 }>();
 
 defineEmits<{

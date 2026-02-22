@@ -32,6 +32,7 @@ interface QuizState {
   loadingQuiz: boolean;
   checkingAnswer: boolean;
   mockMode: boolean;
+  dailyQuizLimit: number;
   sessionId: string;
   provider: string;
   currentIndex: number;
@@ -89,6 +90,7 @@ export const useQuizStore = defineStore("quiz", {
     loadingQuiz: false,
     checkingAnswer: false,
     mockMode: false,
+    dailyQuizLimit: 1,
     sessionId: "",
     provider: "",
     currentIndex: 0,
@@ -221,8 +223,12 @@ export const useQuizStore = defineStore("quiz", {
       try {
         const health = await fetchHealth();
         this.mockMode = Boolean(health.mock_mode);
+        const rawLimit = health.quiz_creations_per_day_limit;
+        const parsedLimit = Number(rawLimit);
+        this.dailyQuizLimit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 1;
       } catch (_error) {
         this.mockMode = false;
+        this.dailyQuizLimit = 1;
       }
       await this.restoreSessionFromStorage();
     },

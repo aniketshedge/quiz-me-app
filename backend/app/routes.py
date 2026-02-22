@@ -27,7 +27,16 @@ def _settings():
 @api_bp.get("/health")
 def health() -> tuple:
     settings = _settings()
-    return jsonify({"status": "ok", "mock_mode": bool(settings.llm_force_mock_mode)}), 200
+    return (
+        jsonify(
+            {
+                "status": "ok",
+                "mock_mode": bool(settings.llm_force_mock_mode),
+                "quiz_creations_per_day_limit": settings.max_quiz_creations_per_day,
+            }
+        ),
+        200,
+    )
 
 
 @api_bp.post("/topic/resolve")

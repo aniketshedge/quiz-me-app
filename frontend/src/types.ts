@@ -105,4 +105,5 @@ export interface SessionStateResponse {
 export interface HealthResponse {
   status: "ok" | "error";
   mock_mode?: boolean;
+  quiz_creations_per_day_limit?: string | number;
 }
