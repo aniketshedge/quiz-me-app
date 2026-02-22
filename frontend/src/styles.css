@@ -159,7 +159,7 @@ a {
 .aurora-layer {
   position: absolute;
   border-radius: 999px;
-  filter: blur(56px);
+  filter: blur(60px);
   will-change: transform, opacity;
 }
 

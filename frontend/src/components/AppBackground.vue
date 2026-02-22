@@ -1,16 +1,19 @@
 <template>
   <div class="app-background" aria-hidden="true">
-    <motion.div
+    <Motion
+      as="div"
       class="aurora-layer aurora-layer-a"
       :animate="reducedMotion ? staticA : animateA"
       :transition="transitionA"
     />
-    <motion.div
+    <Motion
+      as="div"
       class="aurora-layer aurora-layer-b"
       :animate="reducedMotion ? staticB : animateB"
       :transition="transitionB"
     />
-    <motion.div
+    <Motion
+      as="div"
       class="aurora-layer aurora-layer-c"
       :animate="reducedMotion ? staticC : animateC"
       :transition="transitionC"
@@ -20,10 +23,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { motion } from "motion-v";
+import { computed } from "vue";
+import { Motion, useReducedMotion } from "motion-v";
 
-const reducedMotion = ref(false);
+const prefersReducedMotion = useReducedMotion();
+const reducedMotion = computed(() => Boolean(prefersReducedMotion.value));
 
 const staticA = {
   x: 0,
@@ -45,41 +49,37 @@ const staticC = {
 };
 
 const animateA = {
-  x: [-36, 26, -12, -36],
-  y: [-20, 14, 22, -20],
-  scale: [1, 1.07, 0.96, 1],
-  opacity: [0.52, 0.68, 0.58, 0.52]
+  x: [-64, 44, -28, -64],
+  y: [-36, 22, 34, -36],
+  scale: [1, 1.09, 0.94, 1],
+  opacity: [0.48, 0.72, 0.56, 0.48]
 };
 const animateB = {
-  x: [24, -18, 22, 24],
-  y: [16, -12, 18, 16],
-  scale: [1, 0.94, 1.05, 1],
-  opacity: [0.44, 0.58, 0.48, 0.44]
+  x: [46, -34, 38, 46],
+  y: [30, -24, 28, 30],
+  scale: [1, 0.92, 1.06, 1],
+  opacity: [0.4, 0.62, 0.46, 0.4]
 };
 const animateC = {
-  x: [-10, 18, -6, -10],
-  y: [20, -16, 14, 20],
-  scale: [1, 1.05, 0.95, 1],
-  opacity: [0.4, 0.54, 0.46, 0.4]
+  x: [-22, 32, -14, -22],
+  y: [38, -26, 20, 38],
+  scale: [1, 1.07, 0.93, 1],
+  opacity: [0.38, 0.58, 0.44, 0.38]
 };
 
 const transitionA = {
-  duration: 26,
-  repeat: Number.POSITIVE_INFINITY,
+  duration: 19,
+  repeat: Infinity,
   ease: "easeInOut"
 };
 const transitionB = {
-  duration: 32,
-  repeat: Number.POSITIVE_INFINITY,
+  duration: 24,
+  repeat: Infinity,
   ease: "easeInOut"
 };
 const transitionC = {
-  duration: 29,
-  repeat: Number.POSITIVE_INFINITY,
+  duration: 21,
+  repeat: Infinity,
   ease: "easeInOut"
 };
-
-onMounted(() => {
-  reducedMotion.value = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-});
 </script>
