@@ -103,8 +103,30 @@ import PopupModal from "./components/PopupModal.vue";
 
 const store = useQuizStore();
 const legalVisible = ref(false);
+const supportedThemes = new Set(["earth", "ocean", "sunset"]);
+
+function applyThemeFromRuntime(): void {
+  const root = document.documentElement;
+  const params = new URLSearchParams(window.location.search);
+  const themeFromUrl = params.get("theme")?.trim().toLowerCase();
+  const themeFromStorage = window.localStorage.getItem("quiz-me-theme")?.trim().toLowerCase();
+  const chosen = themeFromUrl || themeFromStorage || "earth";
+
+  if (!supportedThemes.has(chosen)) {
+    root.removeAttribute("data-theme");
+    return;
+  }
+
+  if (chosen === "earth") {
+    root.removeAttribute("data-theme");
+  } else {
+    root.setAttribute("data-theme", chosen);
+  }
+  window.localStorage.setItem("quiz-me-theme", chosen);
+}
 
 onMounted(() => {
+  applyThemeFromRuntime();
   void store.initialize();
 });
 </script>
