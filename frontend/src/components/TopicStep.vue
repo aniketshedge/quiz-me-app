@@ -3,7 +3,7 @@
     <h1>Quiz Me!</h1>
     <p class="subtext">Create a quiz for yourself based on any topic!</p>
 
-    <label for="topic-input" class="field-label">Topic</label>
+    <label for="topic-input" class="field-label">Enter your topic</label>
     <input
       id="topic-input"
       class="text-input"
@@ -14,10 +14,6 @@
       @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       @keyup.enter="$emit('submit')"
     />
-
-    <p v-if="mockMode" class="warning-note" role="status" aria-live="polite">
-      Mock mode is enabled. The app is using deterministic mock quiz data and will not call any LLM APIs.
-    </p>
 
     <div class="actions">
       <button type="button" class="btn btn-primary" :disabled="resolving" @click="$emit('submit')">
@@ -34,6 +30,10 @@
         <li>Solve the quiz to test your knowledge of your chosen topic.</li>
       </ol>
     </section>
+
+    <p v-if="mockMode" class="warning-note" role="status" aria-live="polite">
+      Mock mode is enabled. This app will use only sample data for the quiz, and not use any AI models.
+    </p>
   </section>
 </template>
 
