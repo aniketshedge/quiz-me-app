@@ -253,14 +253,27 @@ h1 {
   display: block;
 }
 
+.quiz-stage-title {
+  margin: 0 0 0.55rem;
+  font-size: clamp(1.35rem, 3.2vw, 1.8rem);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
 .eyebrow {
   color: var(--muted);
   font-weight: 600;
   margin-bottom: 0.3rem;
 }
 
+.question-stem {
+  margin: 0;
+  font-size: clamp(1.12rem, 2.2vw, 1.35rem);
+  line-height: 1.35;
+}
+
 .question-card {
-  margin-top: 1rem;
+  margin-top: 0.8rem;
   padding: 1rem;
   border-radius: 16px;
   border: 1px solid var(--border);
@@ -279,10 +292,22 @@ h1 {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0.6rem 0.65rem;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .option-item.locked {
   background: #f5f1e8;
+  cursor: not-allowed;
+}
+
+.quiz-shell .option-item:not(.locked):hover {
+  background: #faf6ee;
+  border-color: #cdc3b2;
+  box-shadow: 0 4px 10px rgba(31, 41, 51, 0.07);
 }
 
 .short-answer-wrap {
@@ -308,6 +333,32 @@ h1 {
 .feedback.correct {
   background: #ebfff1;
   border-color: #8fd1a6;
+}
+
+.quiz-shell button {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    filter 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.quiz-shell button:not(:disabled):hover {
+  box-shadow: 0 6px 14px rgba(31, 41, 51, 0.08);
+}
+
+.quiz-shell button:not(:disabled):active {
+  box-shadow: 0 3px 8px rgba(31, 41, 51, 0.08);
+}
+
+.quiz-shell .btn:not(.btn-primary):not(:disabled):hover {
+  background: #f8f2e7;
+  border-color: #cfc2ad;
+}
+
+.quiz-shell .btn.btn-primary:not(:disabled):hover {
+  filter: brightness(1.06) saturate(1.02);
 }
 
 .attribution {
