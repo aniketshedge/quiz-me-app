@@ -4,13 +4,32 @@
     <section class="quiz-shell">
       <header class="quiz-header">
         <p class="eyebrow">Question {{ currentIndex + 1 }} of {{ totalQuestions }}</p>
-        <h3 class="question-stem">{{ question.stem }}</h3>
+        <AnimatePresence mode="wait">
+          <motion.h3
+            :key="`stem-${question.id}`"
+            class="question-stem"
+            :initial="stemInitial"
+            :animate="stemAnimate"
+            :exit="stemExit"
+            :transition="stemTransition"
+          >
+            {{ question.stem }}
+          </motion.h3>
+        </AnimatePresence>
       </header>
 
-      <transition mode="out-in" @enter="onEnter" @leave="onLeave">
-        <article :key="question.id" class="question-card">
+      <AnimatePresence mode="wait">
+        <motion.article
+          :key="question.id"
+          class="question-card"
+          layout
+          :initial="cardInitial"
+          :animate="cardAnimate"
+          :exit="cardExit"
+          :transition="cardTransition"
+        >
           <div v-if="question.type === 'mcq_single' || question.type === 'mcq_multi'" class="options">
-            <label
+            <motion.label
               v-for="(option, optionIndex) in question.options"
               :key="option.id"
               class="option-item"
@@ -18,6 +37,9 @@
                 locked: answerState?.locked,
                 selected: isSelected(option.id)
               }"
+              :initial="optionInitial"
+              :animate="optionAnimate"
+              :transition="optionTransition(optionIndex)"
             >
               <input
                 class="option-input"
@@ -32,7 +54,7 @@
               <span class="option-card">
                 <span class="option-text">{{ option.text }}</span>
               </span>
-            </label>
+            </motion.label>
           </div>
 
           <div v-else class="short-answer-wrap">
@@ -51,11 +73,23 @@
             <span v-if="answerState?.locked">Locked</span>
           </div>
 
-          <p v-if="answerState?.feedback" class="feedback" :class="{ correct: answerState?.is_correct }">
-            {{ answerState?.feedback }}
-          </p>
-        </article>
-      </transition>
+          <AnimatePresence>
+            <motion.p
+              v-if="answerState?.feedback"
+              :key="`fb-${question.id}-${answerState?.attempts_used}-${answerState?.is_correct ? 'c' : 'i'}`"
+              class="feedback"
+              :class="{ correct: answerState?.is_correct }"
+              layout
+              :initial="feedbackInitial"
+              :animate="feedbackAnimate"
+              :exit="feedbackExit"
+              :transition="feedbackTransition"
+            >
+              {{ answerState?.feedback }}
+            </motion.p>
+          </AnimatePresence>
+        </motion.article>
+      </AnimatePresence>
 
       <footer class="actions">
         <button type="button" class="btn" :disabled="currentIndex === 0" @click="$emit('prev')">Back</button>
@@ -72,7 +106,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { gsap } from "gsap";
+import { AnimatePresence, motion, useReducedMotion } from "motion-v";
 import type { AnswerState, QuestionModel, QuizModel } from "../types";
 
 const props = defineProps<{
@@ -91,6 +125,9 @@ const emit = defineEmits<{
 
 const selectedOptionIds = ref<string[]>([]);
 const shortAnswer = ref("");
+const direction = ref(1);
+const prefersReducedMotion = useReducedMotion();
+const reducedMotion = computed(() => Boolean(prefersReducedMotion.value));
 
 const question = computed<QuestionModel | null>(() => {
   if (!props.quiz) {
@@ -125,6 +162,16 @@ watch(
     shortAnswer.value = state?.short_answer || "";
   },
   { immediate: true }
+);
+
+watch(
+  () => props.currentIndex,
+  (next, prev) => {
+    if (typeof prev !== "number") {
+      return;
+    }
+    direction.value = next >= prev ? 1 : -1;
+  }
 );
 
 const canCheck = computed(() => {
@@ -174,21 +221,55 @@ function checkAnswer(): void {
   emit("check", { selected_option_ids: selectedOptionIds.value });
 }
 
-function onEnter(el: Element, done: () => void): void {
-  gsap.fromTo(
-    el,
-    { opacity: 0, x: 24 },
-    { opacity: 1, x: 0, duration: 0.28, ease: "power2.out", onComplete: done }
-  );
+const cardInitial = computed(() =>
+  reducedMotion.value
+    ? { opacity: 0 }
+    : { opacity: 0, x: direction.value > 0 ? 32 : -32, scale: 0.995 }
+);
+const cardAnimate = computed(() => ({ opacity: 1, x: 0, scale: 1 }));
+const cardExit = computed(() =>
+  reducedMotion.value
+    ? { opacity: 0 }
+    : { opacity: 0, x: direction.value > 0 ? -24 : 24, scale: 0.995 }
+);
+const cardTransition = computed(() =>
+  reducedMotion.value
+    ? { duration: 0.14 }
+    : { duration: 0.28, ease: "easeOut" }
+);
+
+const stemInitial = computed(() =>
+  reducedMotion.value ? { opacity: 0 } : { opacity: 0, y: 8, x: direction.value > 0 ? 10 : -10 }
+);
+const stemAnimate = { opacity: 1, y: 0, x: 0 };
+const stemExit = computed(() =>
+  reducedMotion.value ? { opacity: 0 } : { opacity: 0, y: -6, x: direction.value > 0 ? -8 : 8 }
+);
+const stemTransition = computed(() =>
+  reducedMotion.value
+    ? { duration: 0.12 }
+    : { duration: 0.2, ease: "easeOut" }
+);
+
+const optionInitial = computed(() => (reducedMotion.value ? { opacity: 0 } : { opacity: 0, y: 10 }));
+const optionAnimate = { opacity: 1, y: 0 };
+function optionTransition(index: number): { duration: number; delay: number; ease?: string } {
+  if (reducedMotion.value) {
+    return { duration: 0.12, delay: 0 };
+  }
+  return {
+    duration: 0.22,
+    delay: 0.04 * index,
+    ease: "easeOut"
+  };
 }
 
-function onLeave(el: Element, done: () => void): void {
-  gsap.to(el, {
-    opacity: 0,
-    x: -24,
-    duration: 0.2,
-    ease: "power1.in",
-    onComplete: done
-  });
-}
+const feedbackInitial = computed(() => (reducedMotion.value ? { opacity: 0 } : { opacity: 0, y: 6 }));
+const feedbackAnimate = { opacity: 1, y: 0 };
+const feedbackExit = computed(() => (reducedMotion.value ? { opacity: 0 } : { opacity: 0, y: -4 }));
+const feedbackTransition = computed(() =>
+  reducedMotion.value
+    ? { duration: 0.12 }
+    : { duration: 0.2, ease: "easeOut" }
+);
 </script>
