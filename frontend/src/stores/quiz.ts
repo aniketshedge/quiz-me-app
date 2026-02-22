@@ -249,10 +249,13 @@ export const useQuizStore = defineStore("quiz", {
       }
     },
 
-    async submitCurrentAnswer(payload: { selected_option_ids?: string[]; short_answer?: string }) {
+    async submitCurrentAnswer(payload: {
+      selected_option_ids?: string[];
+      short_answer?: string;
+    }): Promise<AnswerSubmissionResponse | null> {
       const question = this.currentQuestion;
       if (!question || !this.sessionId) {
-        return;
+        return null;
       }
 
       this.checkingAnswer = true;
@@ -265,17 +268,70 @@ export const useQuizStore = defineStore("quiz", {
 
         if (result.status === "invalid") {
           this.showPopup("Invalid response", result.feedback);
-          return;
+          return result;
         }
 
         if (result.status === "locked") {
           this.showPopup("Question locked", result.feedback);
-          return;
+          return result;
         }
+        return result;
       } catch (_error) {
         this.showPopup("Check failed", "Unable to check answer at the moment.");
+        return null;
       } finally {
         this.checkingAnswer = false;
+      }
+    },
+
+    async nextFromQuiz(payload: { selected_option_ids?: string[]; short_answer?: string }) {
+      const question = this.currentQuestion;
+      if (!question) {
+        return;
+      }
+
+      const total = this.state?.total_questions || 15;
+      const advance = () => {
+        if (this.currentIndex >= total - 1) {
+          this.step = "score";
+          return;
+        }
+        this.currentIndex = Math.min(total - 1, this.currentIndex + 1);
+      };
+
+      const answer = this.state?.answers?.[question.id];
+      if (answer?.locked) {
+        advance();
+        return;
+      }
+
+      const hasPriorCheckedFeedback = Boolean(answer?.feedback) && (answer?.attempts_used || 0) > 0;
+      if (hasPriorCheckedFeedback) {
+        advance();
+        return;
+      }
+
+      const hasDraftInput =
+        question.type === "short_text"
+          ? Boolean(payload.short_answer && payload.short_answer.trim().length > 0)
+          : Boolean(payload.selected_option_ids && payload.selected_option_ids.length > 0);
+
+      if (!hasDraftInput) {
+        advance();
+        return;
+      }
+
+      const result = await this.submitCurrentAnswer(
+        question.type === "short_text"
+          ? { short_answer: (payload.short_answer || "").trim() }
+          : { selected_option_ids: payload.selected_option_ids || [] }
+      );
+      if (!result) {
+        return;
+      }
+
+      if (result.status === "accepted" && result.is_correct) {
+        advance();
       }
     },
 

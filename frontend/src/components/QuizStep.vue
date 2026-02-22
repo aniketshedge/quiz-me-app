@@ -98,7 +98,7 @@
         <button type="button" class="btn btn-primary" :disabled="!canCheck" @click="checkAnswer">
           {{ checkingAnswer ? "Checking..." : "Check" }}
         </button>
-        <button type="button" class="btn" :disabled="checkingAnswer" @click="$emit('next')">
+        <button type="button" class="btn" :disabled="checkingAnswer" @click="goNext">
           {{ isLastQuestion ? "Finish" : "Next" }}
         </button>
       </footer>
@@ -120,7 +120,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (event: "prev"): void;
-  (event: "next"): void;
+  (event: "next", payload: { selected_option_ids?: string[]; short_answer?: string }): void;
   (event: "check", payload: { selected_option_ids?: string[]; short_answer?: string }): void;
 }>();
 
@@ -222,6 +222,17 @@ function checkAnswer(): void {
     return;
   }
   emit("check", { selected_option_ids: selectedOptionIds.value });
+}
+
+function goNext(): void {
+  if (!question.value) {
+    return;
+  }
+  if (question.value.type === "short_text") {
+    emit("next", { short_answer: shortAnswer.value.trim() });
+    return;
+  }
+  emit("next", { selected_option_ids: [...selectedOptionIds.value] });
 }
 
 const cardInitial = computed(() =>

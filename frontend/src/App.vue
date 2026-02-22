@@ -41,7 +41,7 @@
           :total-questions="store.totalQuestions"
           :checking-answer="store.checkingAnswer"
           @prev="store.prevQuestion"
-          @next="store.nextQuestion"
+          @next="store.nextFromQuiz"
           @check="store.submitCurrentAnswer"
         >
           <template #top-right>
