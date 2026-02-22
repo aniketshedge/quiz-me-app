@@ -186,26 +186,41 @@ h1 {
 
 .article-confirm-panel button {
   transition:
-    transform 0.16s ease,
-    box-shadow 0.22s ease,
-    filter 0.2s ease;
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    filter 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .article-confirm-panel button:not(:disabled):hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(31, 41, 51, 0.11);
-  filter: brightness(1.01);
+  box-shadow: 0 6px 14px rgba(31, 41, 51, 0.08);
 }
 
 .article-confirm-panel button:not(:disabled):active {
-  transform: translateY(0);
-  box-shadow: 0 3px 8px rgba(31, 41, 51, 0.1);
+  box-shadow: 0 3px 8px rgba(31, 41, 51, 0.08);
+}
+
+.article-confirm-panel .btn:not(.btn-primary):not(:disabled):hover {
+  background: #f8f2e7;
+  border-color: #cfc2ad;
+}
+
+.article-confirm-panel .btn.btn-primary:not(:disabled):hover {
+  filter: brightness(1.06) saturate(1.02);
+}
+
+.article-confirm-panel .alt-item:not(:disabled):hover {
+  background: #faf6ee;
+  border-color: #cdc3b2;
 }
 
 .article-confirm-panel .alt-item.selected:not(:disabled):hover {
+  background: #f2fbf6;
+  border-color: var(--accent);
   box-shadow:
     0 0 0 3px var(--ring),
-    0 8px 18px rgba(31, 41, 51, 0.11);
+    0 6px 14px rgba(31, 41, 51, 0.08);
 }
 
 .alt-list {

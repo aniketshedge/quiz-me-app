@@ -62,10 +62,6 @@
       </button>
     </footer>
 
-    <p class="attribution" v-if="quiz.source.image_url">
-      Image source: Wikimedia Commons (via Wikipedia). Original creator/license apply.
-      <a :href="quiz.source.wikipedia_url" target="_blank" rel="noreferrer">Source</a>
-    </p>
   </section>
 </template>
 

@@ -27,6 +27,10 @@
       >
         {{ loading ? "Generating quiz..." : "Use this article" }}
       </button>
+      <p class="attribution" v-if="primary.image_url">
+        Image source: Wikimedia Commons (via Wikipedia). Original creator/license apply.
+        <a :href="primary.url" target="_blank" rel="noreferrer" @click.stop>Source</a>
+      </p>
     </div>
 
     <div v-if="alternatives.length" class="alt-list">
