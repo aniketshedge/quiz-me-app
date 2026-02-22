@@ -149,7 +149,7 @@ a {
 }
 
 .app-background {
-  position: absolute;
+  position: fixed;
   inset: 0;
   overflow: hidden;
   pointer-events: none;
@@ -159,31 +159,31 @@ a {
 .aurora-layer {
   position: absolute;
   border-radius: 999px;
-  filter: blur(60px);
+  filter: blur(66px);
   will-change: transform, opacity;
 }
 
 .aurora-layer-a {
-  width: min(42vw, 430px);
-  height: min(42vw, 430px);
-  right: -2%;
-  top: -4%;
+  width: min(56vw, 680px);
+  height: min(56vw, 680px);
+  right: -8%;
+  top: -12%;
   background: var(--aurora-a);
 }
 
 .aurora-layer-b {
-  width: min(36vw, 360px);
-  height: min(36vw, 360px);
-  left: -4%;
-  bottom: 8%;
+  width: min(48vw, 560px);
+  height: min(48vw, 560px);
+  left: -10%;
+  bottom: 2%;
   background: var(--aurora-b);
 }
 
 .aurora-layer-c {
-  width: min(34vw, 340px);
-  height: min(34vw, 340px);
-  left: 32%;
-  top: 34%;
+  width: min(44vw, 520px);
+  height: min(44vw, 520px);
+  left: 28%;
+  top: 26%;
   background: var(--aurora-c);
 }
 

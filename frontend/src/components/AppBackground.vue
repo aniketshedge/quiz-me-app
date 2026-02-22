@@ -1,20 +1,20 @@
 <template>
   <div class="app-background" aria-hidden="true">
-    <Motion
-      as="div"
+    <motion.div
       class="aurora-layer aurora-layer-a"
+      :initial="staticA"
       :animate="reducedMotion ? staticA : animateA"
       :transition="transitionA"
     />
-    <Motion
-      as="div"
+    <motion.div
       class="aurora-layer aurora-layer-b"
+      :initial="staticB"
       :animate="reducedMotion ? staticB : animateB"
       :transition="transitionB"
     />
-    <Motion
-      as="div"
+    <motion.div
       class="aurora-layer aurora-layer-c"
+      :initial="staticC"
       :animate="reducedMotion ? staticC : animateC"
       :transition="transitionC"
     />
@@ -23,11 +23,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
-import { Motion, useReducedMotion } from "motion-v";
+import { computed, onMounted, ref } from "vue";
+import { motion, useReducedMotion } from "motion-v";
 
 const prefersReducedMotion = useReducedMotion();
-const reducedMotion = computed(() => Boolean(prefersReducedMotion.value));
+const motionMode = ref<"auto" | "on" | "off">("auto");
+const reducedMotion = computed(() => {
+  if (motionMode.value === "on") {
+    return false;
+  }
+  if (motionMode.value === "off") {
+    return true;
+  }
+  return Boolean(prefersReducedMotion.value);
+});
 
 const staticA = {
   x: 0,
@@ -49,37 +58,44 @@ const staticC = {
 };
 
 const animateA = {
-  x: [-64, 44, -28, -64],
-  y: [-36, 22, 34, -36],
-  scale: [1, 1.09, 0.94, 1],
-  opacity: [0.48, 0.72, 0.56, 0.48]
+  x: [-92, 66, -44, -92],
+  y: [-52, 30, 48, -52],
+  scale: [1, 1.12, 0.92, 1],
+  opacity: [0.44, 0.78, 0.54, 0.44]
 };
 const animateB = {
-  x: [46, -34, 38, 46],
-  y: [30, -24, 28, 30],
-  scale: [1, 0.92, 1.06, 1],
-  opacity: [0.4, 0.62, 0.46, 0.4]
+  x: [74, -48, 58, 74],
+  y: [44, -32, 40, 44],
+  scale: [1, 0.9, 1.08, 1],
+  opacity: [0.36, 0.66, 0.42, 0.36]
 };
 const animateC = {
-  x: [-22, 32, -14, -22],
-  y: [38, -26, 20, 38],
-  scale: [1, 1.07, 0.93, 1],
-  opacity: [0.38, 0.58, 0.44, 0.38]
+  x: [-38, 52, -26, -38],
+  y: [56, -38, 30, 56],
+  scale: [1, 1.09, 0.91, 1],
+  opacity: [0.34, 0.62, 0.4, 0.34]
 };
 
 const transitionA = {
-  duration: 19,
+  duration: 16,
   repeat: Infinity,
   ease: "easeInOut"
 };
 const transitionB = {
-  duration: 24,
+  duration: 20,
   repeat: Infinity,
   ease: "easeInOut"
 };
 const transitionC = {
-  duration: 21,
+  duration: 18,
   repeat: Infinity,
   ease: "easeInOut"
 };
+
+onMounted(() => {
+  const motionParam = new URLSearchParams(window.location.search).get("motion")?.toLowerCase();
+  if (motionParam === "on" || motionParam === "off") {
+    motionMode.value = motionParam;
+  }
+});
 </script>
