@@ -137,28 +137,70 @@ Extract:
         cycle = ["a", "b", "c", "d"]
         return cycle[(question_number - 1) % len(cycle)]
 
+    @staticmethod
+    def _summary_snippets(article: WikiArticle) -> List[str]:
+        text = (article.summary or article.extract or "").strip()
+        if not text:
+            return [f"{article.title} is the selected topic."]
+
+        sentences = re.split(r"(?<=[.!?])\s+", text)
+        snippets: List[str] = []
+        for sentence in sentences:
+            cleaned = re.sub(r"\s+", " ", sentence).strip()
+            if len(cleaned) < 24:
+                continue
+            snippets.append(cleaned[:140].rstrip(" ."))
+            if len(snippets) >= 10:
+                break
+
+        if snippets:
+            return snippets
+        return [text[:140].rstrip(" .")]
+
     def _mock_quiz(self, topic: str, article: WikiArticle, reveal_answers: bool) -> QuizModel:
+        bounded_extract = self._bounded_extract_for_quiz(article)
         source = QuizSource(
             wikipedia_title=article.title,
             wikipedia_url=article.url,
             page_id=article.page_id,
-            extract_used=article.extract[: self.settings.wiki_summary_target_chars],
+            extract_used=bounded_extract,
             image_url=article.image_url,
             image_caption=article.image_caption,
         )
+
+        snippets = self._summary_snippets(article)
+        wrong_option_templates = [
+            f"The article is mostly unrelated to {article.title}.",
+            "The page is a recipe and does not discuss the selected topic.",
+            "The content is presented as pure fiction without factual context.",
+            f"The article focuses only on geography and not on {article.title}.",
+            "The page contains no key ideas or definitions.",
+            "The source is exclusively about entertainment reviews.",
+        ]
 
         questions = []
         for idx in range(1, 11):
             option_ids = ["a", "b", "c", "d"]
             correct = self._mock_single_correct_option_id(idx)
+            support_snippet = snippets[(idx - 1) % len(snippets)]
+            option_text_by_id: dict[str, str] = {}
+            wrong_cursor = idx
+            for option_id in option_ids:
+                if option_id == correct:
+                    option_text_by_id[option_id] = (
+                        f"The article context supports this statement: {support_snippet}."
+                    )
+                else:
+                    option_text_by_id[option_id] = wrong_option_templates[
+                        wrong_cursor % len(wrong_option_templates)
+                    ]
+                    wrong_cursor += 1
+
             options = [
-                {"id": "a", "text": f"{article.title} fact A {idx}"},
-                {"id": "b", "text": f"{article.title} fact B {idx}"},
-                {"id": "c", "text": f"{article.title} fact C {idx}"},
-                {"id": "d", "text": f"{article.title} fact D {idx}"},
+                {"id": option_id, "text": option_text_by_id[option_id]} for option_id in option_ids
             ]
             distractor_feedback = {
-                option_id: f"This choice is not aligned with the source context for question {idx}."
+                option_id: "That statement is not supported by the selected article context."
                 for option_id in option_ids
                 if option_id != correct
             }
@@ -167,7 +209,8 @@ Extract:
                     id=f"q{idx:02d}",
                     type="mcq_single",
                     stem=(
-                        f"Which statement is most supported by the article about {article.title}?"
+                        f"Sample question {idx}: Which statement best matches the selected article about "
+                        f"{article.title}?"
                         + (
                             f" [TEST MODE: Correct option is '{correct}']"
                             if reveal_answers
@@ -175,7 +218,7 @@ Extract:
                         )
                     ),
                     explanation=(
-                        "The correct option best matches the article context."
+                        "Choose the option that is most consistent with the selected article."
                         + (
                             f" [TEST MODE: Correct option is '{correct}']"
                             if reveal_answers
@@ -189,11 +232,13 @@ Extract:
             )
 
         for idx in range(11, 13):
+            snippet_a = snippets[(idx - 1) % len(snippets)]
+            snippet_c = snippets[idx % len(snippets)]
             options = [
-                {"id": "a", "text": "Supported point 1"},
-                {"id": "b", "text": "Supported point 2"},
-                {"id": "c", "text": "Supported point 3"},
-                {"id": "d", "text": "Unsupported point 1"},
+                {"id": "a", "text": f"The article supports this point: {snippet_a}."},
+                {"id": "b", "text": "The article claims the topic has no definitions or key ideas."},
+                {"id": "c", "text": f"The article also supports this point: {snippet_c}."},
+                {"id": "d", "text": "The selected page is unrelated to the chosen topic."},
             ]
             correct_multi = ["a", "c"]
             questions.append(
@@ -201,7 +246,8 @@ Extract:
                     id=f"q{idx:02d}",
                     type="mcq_multi",
                     stem=(
-                        f"Select all statements that align with the article on {article.title}."
+                        f"Sample multi-select {idx - 10}: Select all statements that align with the selected "
+                        f"article on {article.title}."
                         + (
                             " [TEST MODE: Correct options are 'a' and 'c']"
                             if reveal_answers
@@ -209,7 +255,7 @@ Extract:
                         )
                     ),
                     explanation=(
-                        "Multiple answers are correct for this question."
+                        "More than one option can be supported by the article context."
                         + (
                             " [TEST MODE: Correct options are 'a' and 'c']"
                             if reveal_answers
@@ -219,20 +265,22 @@ Extract:
                     options=options,
                     correct_option_ids=correct_multi,
                     distractor_feedback={
-                        "b": "This statement is not fully supported by the article.",
-                        "d": "This statement is not supported by the article.",
+                        "b": "That statement is not supported by the selected article.",
+                        "d": "That statement conflicts with the selected article context.",
                     },
                 )
             )
 
         for idx in range(13, 16):
-            expected_primary = article.title
+            expected_primary = article.title.strip()
+            expected_answers = [value for value in [expected_primary, topic.strip()] if value]
             questions.append(
                 ShortTextQuestion(
                     id=f"q{idx:02d}",
                     type="short_text",
                     stem=(
-                        f"In 1-5 words, name one key idea associated with {article.title}."
+                        f"Sample short-answer {idx - 12}: In 1-5 words, name the topic of the selected "
+                        f"Wikipedia article."
                         + (
                             f" [TEST MODE: Accepted answer includes '{expected_primary}']"
                             if reveal_answers
@@ -240,15 +288,15 @@ Extract:
                         )
                     ),
                     explanation=(
-                        "A short factual concept from the article is expected."
+                        "Enter a concise topic name that matches the selected article."
                         + (
                             f" [TEST MODE: Accepted answer includes '{expected_primary}']"
                             if reveal_answers
                             else ""
                         )
                     ),
-                    expected_answers=[expected_primary, topic],
-                    grading_context=article.summary[:500] or article.extract[:500],
+                    expected_answers=expected_answers or [article.title],
+                    grading_context=(article.summary[:500] or bounded_extract[:500]),
                 )
             )
 
@@ -267,7 +315,7 @@ Extract:
         has_provider = self.llm_manager.any_provider_configured()
         if not has_provider:
             if self.settings.llm_allow_mock:
-                return self._mock_quiz(topic, article, reveal_answers=True), "mock"
+                return self._mock_quiz(topic, article, reveal_answers=False), "mock"
             raise LLMError("No LLM providers are configured", category="server_error")
 
         system_prompt, user_prompt = self._quiz_generation_prompt(topic=topic, article=article)
@@ -302,12 +350,12 @@ Extract:
             if normalized in expected:
                 return ShortGradingResult(
                     is_correct=True,
-                    reason="Correct in test mode.",
+                    reason="Accepted in sample mode.",
                     confidence=1.0,
                 )
             return ShortGradingResult(
                 is_correct=False,
-                reason="Not correct in test mode. Follow the test hint shown in the question prompt.",
+                reason="Not accepted in sample mode.",
                 confidence=1.0,
             )
 
@@ -324,7 +372,7 @@ Extract:
         if not self.llm_manager.any_provider_configured():
             return ShortGradingResult(
                 is_correct=False,
-                reason="Answer does not match expected concepts in mock mode.",
+                reason="Answer does not match accepted sample answers.",
                 confidence=0.3,
             )
 
