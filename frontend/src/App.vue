@@ -1,6 +1,9 @@
 <template>
   <main class="app-shell">
     <AppBackground />
+    <div class="theme-toggle-wrap">
+      <ThemeToggle :is-night="isNight" @toggle="toggleTheme" />
+    </div>
 
     <div class="app-content">
       <transition mode="out-in" name="step-fade">
@@ -100,29 +103,41 @@ import QuizStep from "./components/QuizStep.vue";
 import ScoreStep from "./components/ScoreStep.vue";
 import PopupModal from "./components/PopupModal.vue";
 import AppBackground from "./components/AppBackground.vue";
+import ThemeToggle from "./components/ThemeToggle.vue";
 
 const store = useQuizStore();
 const legalVisible = ref(false);
-const supportedThemes = new Set(["earth", "ocean", "sunset"]);
+const isNight = ref(false);
+const supportedThemes = new Set(["day", "night"]);
+
+function applyTheme(theme: "day" | "night"): void {
+  const root = document.documentElement;
+  if (theme === "night") {
+    root.setAttribute("data-theme", "night");
+    isNight.value = true;
+  } else {
+    root.removeAttribute("data-theme");
+    isNight.value = false;
+  }
+}
+
+function getTimeBasedTheme(): "day" | "night" {
+  const hour = new Date().getHours();
+  return hour >= 18 || hour < 6 ? "night" : "day";
+}
 
 function applyThemeFromRuntime(): void {
-  const root = document.documentElement;
   const params = new URLSearchParams(window.location.search);
   const themeFromUrl = params.get("theme")?.trim().toLowerCase();
-  const themeFromStorage = window.localStorage.getItem("quiz-me-theme")?.trim().toLowerCase();
-  const chosen = themeFromUrl || themeFromStorage || "earth";
+  const chosen = supportedThemes.has(themeFromUrl || "")
+    ? (themeFromUrl as "day" | "night")
+    : getTimeBasedTheme();
 
-  if (!supportedThemes.has(chosen)) {
-    root.removeAttribute("data-theme");
-    return;
-  }
+  applyTheme(chosen);
+}
 
-  if (chosen === "earth") {
-    root.removeAttribute("data-theme");
-  } else {
-    root.setAttribute("data-theme", chosen);
-  }
-  window.localStorage.setItem("quiz-me-theme", chosen);
+function toggleTheme(): void {
+  applyTheme(isNight.value ? "day" : "night");
 }
 
 onMounted(() => {

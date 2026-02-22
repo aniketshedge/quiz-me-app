@@ -239,11 +239,11 @@ const cardTransition = computed(() =>
 );
 
 const stemInitial = computed(() =>
-  reducedMotion.value ? { opacity: 0 } : { opacity: 0, y: 8, x: direction.value > 0 ? 10 : -10 }
+  reducedMotion.value ? { opacity: 0 } : { opacity: 0, x: direction.value > 0 ? 14 : -14 }
 );
-const stemAnimate = { opacity: 1, y: 0, x: 0 };
+const stemAnimate = { opacity: 1, x: 0 };
 const stemExit = computed(() =>
-  reducedMotion.value ? { opacity: 0 } : { opacity: 0, y: -6, x: direction.value > 0 ? -8 : 8 }
+  reducedMotion.value ? { opacity: 0 } : { opacity: 0, x: direction.value > 0 ? -16 : 16 }
 );
 const stemTransition = computed(() =>
   reducedMotion.value
