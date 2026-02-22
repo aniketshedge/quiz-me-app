@@ -39,6 +39,7 @@ interface QuizState {
   primaryCandidate: TopicCandidate | null;
   alternatives: TopicCandidate[];
   selectedCandidate: TopicCandidate | null;
+  rateLimitNotice: string;
   popup: PopupState;
 }
 
@@ -95,6 +96,7 @@ export const useQuizStore = defineStore("quiz", {
     primaryCandidate: null,
     alternatives: [],
     selectedCandidate: null,
+    rateLimitNotice: "",
     popup: defaultPopup()
   }),
   getters: {
@@ -209,6 +211,12 @@ export const useQuizStore = defineStore("quiz", {
       this.popup = defaultPopup();
     },
 
+    setRateLimitNotice(message?: string) {
+      const text = (message || "").trim();
+      this.rateLimitNotice =
+        text || "Rate limit reached. Please try again later. The app may switch to sample data mode.";
+    },
+
     async initialize() {
       try {
         const health = await fetchHealth();
@@ -311,6 +319,14 @@ export const useQuizStore = defineStore("quiz", {
         this.step = "quiz";
         this.persistSessionState();
       } catch (error) {
+        if (isAxiosError(error) && error.response?.status === 429) {
+          this.setRateLimitNotice(
+            extractRequestErrorMessage(
+              error,
+              "Rate limit reached for quiz creation. Please try again later."
+            )
+          );
+        }
         this.showPopup(
           "Quiz generation failed",
           extractRequestErrorMessage(error, "Could not generate quiz after retries. Try another topic.")

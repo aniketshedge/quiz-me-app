@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from flask import Flask, jsonify
 from flask_cors import CORS
+from flask_limiter.errors import RateLimitExceeded
 
 from app.config import Settings
 from app.extensions import limiter
@@ -52,5 +53,10 @@ def create_app() -> Flask:
     @app.errorhandler(413)
     def request_too_large(_error):
         return jsonify({"status": "error", "message": "Request payload too large."}), 413
+
+    @app.errorhandler(RateLimitExceeded)
+    def rate_limit_exceeded(error):
+        message = str(getattr(error, "description", "")).strip() or "Rate limit exceeded."
+        return jsonify({"status": "error", "message": message}), 429
 
     return app

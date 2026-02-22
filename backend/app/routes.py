@@ -107,6 +107,7 @@ def resolve_topic() -> tuple:
 
 @api_bp.post("/quiz/create")
 @limiter.limit(lambda: _settings().max_quiz_creations_per_10min + " per 10 minutes")
+@limiter.limit(lambda: _settings().max_quiz_creations_per_day + " per day")
 def create_quiz() -> tuple:
     try:
         payload = CreateQuizRequest.model_validate(request.get_json(force=True, silent=False))

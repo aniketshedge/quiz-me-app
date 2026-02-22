@@ -37,6 +37,9 @@
     <p v-if="mockMode" class="warning-note" role="status" aria-live="polite">
       Mock mode is enabled. This app will use only sample data for the quiz, and not use any AI models.
     </p>
+    <p v-if="rateLimitNotice" class="warning-note warning-note-rate-limit" role="status" aria-live="polite">
+      {{ rateLimitNotice }}
+    </p>
   </section>
 </template>
 
@@ -45,6 +48,7 @@ defineProps<{
   modelValue: string;
   resolving: boolean;
   mockMode: boolean;
+  rateLimitNotice: string;
 }>();
 
 defineEmits<{

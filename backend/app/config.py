@@ -74,6 +74,7 @@ class Settings:
 
     max_req_per_10min: str
     max_quiz_creations_per_10min: str
+    max_quiz_creations_per_day: str
 
     short_grade_confidence_threshold: float
 
@@ -136,6 +137,7 @@ class Settings:
             ),
             max_req_per_10min=os.getenv("MAX_REQ_PER_10MIN", "60"),
             max_quiz_creations_per_10min=os.getenv("MAX_QUIZ_CREATIONS_PER_10MIN", "5"),
+            max_quiz_creations_per_day=os.getenv("MAX_QUIZ_CREATIONS_PER_DAY", "1"),
             short_grade_confidence_threshold=_as_float(
                 os.getenv("SHORT_GRADE_CONFIDENCE_THRESHOLD"), 0.60
             ),

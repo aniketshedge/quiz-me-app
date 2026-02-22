@@ -9,6 +9,7 @@
           :model-value="store.topicInput"
           :resolving="store.resolving"
           :mock-mode="store.mockMode"
+          :rate-limit-notice="store.rateLimitNotice"
           @update:model-value="store.topicInput = $event"
           @submit="store.resolveTopic"
         >
@@ -61,6 +62,10 @@
         </ScoreStep>
       </transition>
     </div>
+
+    <p v-if="store.rateLimitNotice" class="global-warning" role="status" aria-live="polite">
+      {{ store.rateLimitNotice }}
+    </p>
 
     <footer class="app-footer">
       <p class="footer-copy">Created and hosted by Aniket Shedge</p>
