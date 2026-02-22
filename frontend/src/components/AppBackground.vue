@@ -58,10 +58,10 @@ const shapes: FloatingShape[] = [
     left: "4%",
     top: "10%",
     opacity: 0.5,
-    yRange: [-14, 10, -12],
-    rotateRange: [-6, 4, -5],
-    xRange: [-8, 6, -6],
-    duration: 18,
+    yRange: [-24, 18, -22],
+    rotateRange: [-9, 7, -8],
+    xRange: [-20, 16, -18],
+    duration: 14,
     delay: 0
   },
   {
@@ -73,10 +73,10 @@ const shapes: FloatingShape[] = [
     left: "80%",
     top: "8%",
     opacity: 0.44,
-    yRange: [-10, 12, -10],
-    rotateRange: [-5, 3, -4],
-    xRange: [6, -8, 6],
-    duration: 17,
+    yRange: [-18, 20, -18],
+    rotateRange: [-8, 6, -7],
+    xRange: [16, -20, 16],
+    duration: 13.5,
     delay: 0.4
   },
   {
@@ -88,10 +88,10 @@ const shapes: FloatingShape[] = [
     left: "68%",
     top: "68%",
     opacity: 0.42,
-    yRange: [-12, 9, -11],
-    rotateRange: [5, -4, 4],
-    xRange: [5, -7, 5],
-    duration: 20,
+    yRange: [-20, 16, -19],
+    rotateRange: [8, -7, 7],
+    xRange: [15, -18, 15],
+    duration: 16,
     delay: 0.6
   },
   {
@@ -103,10 +103,10 @@ const shapes: FloatingShape[] = [
     left: "15%",
     top: "72%",
     opacity: 0.38,
-    yRange: [-11, 8, -10],
-    rotateRange: [4, -3, 4],
-    xRange: [-6, 5, -6],
-    duration: 19,
+    yRange: [-19, 15, -18],
+    rotateRange: [7, -6, 7],
+    xRange: [-17, 14, -16],
+    duration: 15,
     delay: 0.3
   },
   {
@@ -118,10 +118,10 @@ const shapes: FloatingShape[] = [
     left: "45%",
     top: "16%",
     opacity: 0.32,
-    yRange: [-7, 7, -7],
-    rotateRange: [-3, 2, -3],
-    xRange: [4, -4, 4],
-    duration: 16,
+    yRange: [-14, 14, -14],
+    rotateRange: [-6, 5, -6],
+    xRange: [12, -12, 12],
+    duration: 12.5,
     delay: 0.8
   },
   {
@@ -133,10 +133,10 @@ const shapes: FloatingShape[] = [
     left: "36%",
     top: "78%",
     opacity: 0.31,
-    yRange: [-8, 6, -8],
-    rotateRange: [3, -2, 3],
-    xRange: [-4, 4, -4],
-    duration: 15,
+    yRange: [-15, 12, -15],
+    rotateRange: [6, -5, 6],
+    xRange: [-11, 11, -11],
+    duration: 11.5,
     delay: 0.1
   }
 ];
@@ -175,7 +175,7 @@ function shapeAnimate(shape: FloatingShape): Record<string, number[]> {
     x: shape.xRange,
     y: shape.yRange,
     rotate: shape.rotateRange,
-    scale: [1, 1.015, 1]
+    scale: [1, 1.03, 1]
   };
 }
 
