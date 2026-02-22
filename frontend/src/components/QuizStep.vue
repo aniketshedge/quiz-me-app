@@ -11,12 +11,16 @@
         <article :key="question.id" class="question-card">
           <div v-if="question.type === 'mcq_single' || question.type === 'mcq_multi'" class="options">
             <label
-              v-for="option in question.options"
+              v-for="(option, optionIndex) in question.options"
               :key="option.id"
               class="option-item"
-              :class="{ locked: answerState?.locked }"
+              :class="{
+                locked: answerState?.locked,
+                selected: isSelected(option.id)
+              }"
             >
               <input
+                class="option-input"
                 :type="question.type === 'mcq_single' ? 'radio' : 'checkbox'"
                 :name="question.id"
                 :value="option.id"
@@ -24,7 +28,11 @@
                 :disabled="answerState?.locked"
                 @change="toggleOption(option.id, question.type === 'mcq_single')"
               />
-              <span>{{ option.text }}</span>
+              <span class="option-marker" aria-hidden="true">{{ optionLetter(optionIndex) }}</span>
+              <span class="option-card">
+                <span class="option-text">{{ option.text }}</span>
+                <span v-if="isSelected(option.id)" class="option-selected-indicator" aria-hidden="true">✓</span>
+              </span>
             </label>
           </div>
 
@@ -132,6 +140,10 @@ const canCheck = computed(() => {
 
 function isSelected(optionId: string): boolean {
   return selectedOptionIds.value.includes(optionId);
+}
+
+function optionLetter(index: number): string {
+  return String.fromCharCode(65 + index);
 }
 
 function toggleOption(optionId: string, single: boolean): void {

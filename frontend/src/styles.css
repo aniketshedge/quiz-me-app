@@ -286,28 +286,95 @@ h1 {
 }
 
 .option-item {
-  display: flex;
-  gap: 0.55rem;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.65rem;
   align-items: center;
+  cursor: pointer;
+}
+
+.option-item.locked {
+  cursor: not-allowed;
+}
+
+.option-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.option-marker {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid #b9b3a8;
+  background: #fff;
+  color: #5f6670;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.option-card {
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 0.6rem 0.65rem;
-  cursor: pointer;
+  background: #fff;
+  padding: 0.62rem 0.72rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
   transition:
     background-color 0.2s ease,
     border-color 0.2s ease,
     box-shadow 0.2s ease;
 }
 
-.option-item.locked {
-  background: #f5f1e8;
-  cursor: not-allowed;
+.option-text {
+  display: block;
 }
 
-.quiz-shell .option-item:not(.locked):hover {
+.option-selected-indicator {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid #6bb18a;
+  background: #ebfff1;
+  color: #1f6f45;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.quiz-shell .option-item:not(.locked):hover .option-card {
   background: #faf6ee;
   border-color: #cdc3b2;
   box-shadow: 0 4px 10px rgba(31, 41, 51, 0.07);
+}
+
+.quiz-shell .option-item.selected .option-card {
+  background: #f2fbf6;
+  border-color: var(--accent);
+}
+
+.quiz-shell .option-item.selected .option-marker {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #f9fffb;
+}
+
+.quiz-shell .option-item.locked .option-card {
+  background: #f5f1e8;
 }
 
 .short-answer-wrap {
