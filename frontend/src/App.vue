@@ -1,7 +1,6 @@
 <template>
   <main class="app-shell">
-    <div class="ambient ambient-a"></div>
-    <div class="ambient ambient-b"></div>
+    <AppBackground />
 
     <div class="app-content">
       <transition mode="out-in" name="step-fade">
@@ -100,6 +99,7 @@ import ArticleConfirmStep from "./components/ArticleConfirmStep.vue";
 import QuizStep from "./components/QuizStep.vue";
 import ScoreStep from "./components/ScoreStep.vue";
 import PopupModal from "./components/PopupModal.vue";
+import AppBackground from "./components/AppBackground.vue";
 
 const store = useQuizStore();
 const legalVisible = ref(false);
